@@ -4,12 +4,12 @@ from contextlib import contextmanager
 from functools import lru_cache
 
 from mara_db import config
-from sqlalchemy import engine
+import sqlalchemy.engine
 from sqlalchemy import orm
 
 
 @lru_cache(maxsize=None)
-def engine(alias) -> engine.Engine:
+def engine(alias) -> sqlalchemy.engine.Engine:
     """Returns a database engine by alias"""
     databases = config.databases()
     if alias not in databases:
