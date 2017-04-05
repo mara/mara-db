@@ -9,11 +9,11 @@ from sqlalchemy import orm
 
 
 @lru_cache(maxsize=None)
-def engine(alias) -> sqlalchemy.engine.Engine:
+def engine(alias: str) -> sqlalchemy.engine.Engine:
     """Returns a database engine by alias"""
     databases = config.databases()
     if alias not in databases:
-        raise KeyError('database alias "{}" not configured' % alias)
+        raise KeyError(f'database alias "{alias}" not configured')
     return databases[alias]
 
 
