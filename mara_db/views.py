@@ -2,11 +2,14 @@
 
 import flask
 import graphviz
+from typing import NamedTuple, Optional, Tuple
 
 from mara_db import config
 from mara_page import acl, navigation, response, bootstrap, _
-from sqlalchemy import MetaData, engine
+from sqlalchemy import engine
 
+
+FKRelationship = NamedTuple("FKRelationship", [('source_schema', Optional[str]), ('source_table', str), ('target_schema', Optional[str]), ('target_table', str)])
 
 
 mara_db = flask.Blueprint('mara_db', __name__, static_folder='static', url_prefix='/db')
@@ -28,15 +31,21 @@ def draw_schema(db: engine.Engine, schema: str=None) -> str:
     node_attributes = {'fontname': ' ',  # use website default
                        'fontsize': '10.5px'  # fontsize unfortunately must be set
                        }
-    # TODO this does not manage Postgres table inheritance but could be used for other engines, see vendor/project-a/dwh-package/src/ProjectA/Zed/Dwh/Component/Gui/Db.php for reference implementation
-    meta = MetaData()
-    meta.reflect(bind=db, schema=schema)
-    graph.node(name='foo', label='foo', _attributes=node_attributes)
-    graph.node(name='bar', label='bar', _attributes=node_attributes)
-    for name, table in meta.tables.items():
-        graph.node(name=name, label=name[1 + len(schema) if schema is not None else 0:], _attributes=node_attributes)
 
-#    graph.edge('foo', 'bar')
+    tables: Tuple[Optional[str], str]
+    fk_relationships: FKRelationship
+
+    if db.dialect.name == 'postgresql':
+        from mara_db import postgres_helper
+        tables = [(schema, table_name) for table_name in postgres_helper.list_tables(db, schema)]
+        fk_relationships = postgres_helper.list_fk_constraints(db)
+
+    for schema_name, table_name in tables:
+        graph.node(name=table_name, label=table_name, _attributes=node_attributes)
+    for rel in fk_relationships:
+        # NOTE: currently cross-schema relationships are retrieved but not displayed
+        if (schema, rel.source_table) in tables and (schema, rel.target_table) in tables:
+            graph.edge(rel.source_table, rel.target_table)
     return graph.pipe('svg').decode('utf-8')
 
 
@@ -58,8 +67,8 @@ def index_page(db_alias: str, schema: str=None):
         html=[
             bootstrap.card(header_left='Schemas',
                            body=[_.p()['Database object of kind:'], repr(db)]),
-            bootstrap.card(body=_.h1(style='color:blue')[
-                'foo',
+            bootstrap.card(body=[
+                _.h1()[schema],
                 draw_schema(db, schema)
             ])
         ])
