@@ -1,28 +1,33 @@
 from itertools import groupby
-from typing import List, Tuple
+from typing import List, Tuple, Set
 from sqlalchemy import engine
 
 from mara_db.views import FKRelationship
 
 
 def list_schemas(db: engine.Engine) -> List[str]:
-    """List the schema names in the given database.
+    """List the __relevant__ schema names in the given database. Ignores scheme without FK relationships inside
 
     Args:
-       db (:obj:`engine.Engine`): SQLAlchemy engine instance.
+       db: SQLAlchemy engine instance.
 
     Returns:
-       List[str]: List of schema names
+       List[str]: List of schema names where at least a FK relationship exists
     """
-    return [row['schema_name'] for row in db.execute("""select schema_name from information_schema.schemata""").fetchall()]
+
+    schemas: Set[str] = set()
+    for fk in list_fk_constraints(db):
+        schemas.add(fk.source_schema)
+        schemas.add(fk.target_schema)
+    return list(schemas)
 
 
 def list_tables_and_columns(db: engine.Engine, schemas: List[str]) -> List[Tuple[str, str, List[str]]]:
     """List the table names  in the given schema, ignoring inherited tables (only show father.
 
     Args:
-       db (:obj:`engine.Engine`): SQLAlchemy engine instance.
-       schema (:obj:`str`): The schema to search into.
+       db: SQLAlchemy engine instance.
+       schema: The schema to search into.
 
     Returns:
        List[str, List[str]]: List of table names, without schema prefix, and their columns
@@ -51,7 +56,10 @@ def list_fk_constraints(db: engine.Engine) -> FKRelationship:
     Returns:
        List[FKRelationship]: List of tuples with source and target table names and schemas
     """
-    return [FKRelationship(row['constraint_schema_name'], row['constraint_table_name'], row['foreign_schema_name'], row['foreign_table_name'])
+    return [FKRelationship(row['constraint_schema_name'],
+                           row['constraint_table_name'],
+                           row['foreign_schema_name'],
+                           row['foreign_table_name'])
             for row in db.execute('''
         WITH inheritance_relations AS
         (SELECT
