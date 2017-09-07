@@ -1,24 +1,44 @@
-from typing import List
+from itertools import groupby
+from typing import List, Tuple
 from sqlalchemy import engine
 
 from mara_db.views import FKRelationship
 
+def list_schemas(db: engine.Engine) -> List[str]:
+    """List the schema names in the given database.
 
-def list_tables(db: engine.Engine, schema: str) -> List[str]:
-    """List the table names in the given schema, ignoring inherited tables (only show father.
+    Args:
+       db (:obj:`engine.Engine`): SQLAlchemy engine instance.
+
+    Returns:
+       List[str]: List of schema names
+    """
+    return [row['schema_name'] for row in db.execute("""select schema_name from information_schema.schemata""").fetchall()]
+
+
+def list_tables_and_columns(db: engine.Engine, schema: str) -> List[Tuple[str, str, List[str]]]:
+    """List the table names  in the given schema, ignoring inherited tables (only show father.
 
     Args:
        db (:obj:`engine.Engine`): SQLAlchemy engine instance.
        schema (:obj:`str`): The schema to search into.
 
     Returns:
-       List[str]: List of table names, without schema prefix
+       List[str, List[str]]: List of table names, without schema prefix, and their columns
     """
-    return [row['tablename'] for row in db.execute("""select tablename from pg_tables
+    raw_result = [(row['tablename'], row['column_name']) for row in db.execute("""select tablename, column_name
+    from pg_tables pt
+      JOIN information_schema.columns col
+      ON col.table_name = pt.tablename AND col.table_schema = pt.schemaname
     where schemaname=%(schema_name)s AND tablename NOT IN (SELECT c.relname AS tablename
     FROM pg_inherits JOIN pg_class AS c ON (inhrelid=c.oid)
     JOIN pg_class as p ON (inhparent=p.oid))""", schema_name=schema).fetchall()]
-
+    columns_dict = {}
+    for table, column in raw_result:
+        if table not in columns_dict:
+            columns_dict[table] = []
+        columns_dict[table].append(column)
+    return [(schema, table, columns) for (table, columns) in columns_dict.items()]
 
 def list_fk_constraints(db: engine.Engine) -> FKRelationship:
     """List the foreign key relationships in the whole databases.
