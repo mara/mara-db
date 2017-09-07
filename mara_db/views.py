@@ -1,6 +1,5 @@
 """DB schema visualization"""
 
-import functools
 from typing import List, NamedTuple, Optional, Tuple
 
 import flask
@@ -24,15 +23,16 @@ def navigation_entry():
         label='DB Schema', uri_fn=lambda: flask.url_for('mara_db.index_page', db_alias=config.mara_db_alias()),
         icon='star',
         description='Data base schemas',
-        children=[navigation.NavigationEntry(label=db_alias, icon='database',
-                                             description=f'The schema of the {db_alias} db',
-                                             uri_fn=functools.partial(
-                                                 lambda: flask.url_for('mara_db.index_page', db_alias=db_alias)))
-                  for db_alias in config.databases().keys()]
+        children=[navigation.NavigationEntry(label=db, icon='database',
+                                             description=f'The schema of the {db} db',
+                                             uri_fn=lambda current_db=db: flask.url_for('mara_db.index_page',
+                                                                                        db_alias=current_db))
+                  for db in config.databases().keys()]
     )
 
 
-def draw_schema(db: engine.Engine, schema: str = None) -> str:
+
+def draw_schema(db: engine.Engine, schemas: List[str] = []) -> str:
     graph = graphviz.Graph(engine='fdp', graph_attr={'splines': 'True',
                                                      'overlap': 'ortho'})
     # graph = graphviz.Graph(engine='dot', graph_attr={'splines' : True, 'overlap' : 'ortho'})
@@ -46,10 +46,10 @@ def draw_schema(db: engine.Engine, schema: str = None) -> str:
 
     if db.dialect.name == 'postgresql':
         from mara_db import postgres_helper
-        tables = postgres_helper.list_tables_and_columns(db, schema)
+        tables = postgres_helper.list_tables_and_columns(db, schemas)
         fk_relationships = postgres_helper.list_fk_constraints(db)
+
     for schema_name, table_name, columns in tables:
-        # graph.node(name=table_name, label='<ol><li>' + table_name + '</ol></li>', _attributes=node_attributes)
         # NOTE: there are limits on what can be put on a label.
         # To be considered HTML it has to start with < and end with >, no whitespaces before or after
         # only a few tags can be used, like FONT or TABLE
@@ -61,22 +61,36 @@ def draw_schema(db: engine.Engine, schema: str = None) -> str:
         # so there are no particular limits on the content of a node
         # However, columns names sometime overflow so a separator is added as a suffix and prefix to take some space
         separator = '  '
-        graph.node(shape='plain', name=table_name,
+        graph.node(shape='plain', name=f'{schema_name}__{table_name}',
                    label=''.join(['<',
                                   """ <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="1" BGCOLOR="#bbffcc"><TR><TD ALIGN="LEFT"><U><B>""",
-                                  table_name,
+                                  f'{schema_name}.{table_name}' if len(schemas) > 1 else table_name,
                                   """</B></U></TD></TR>""", ''.join(
                            [f'<TR><TD ALIGN="LEFT" >{separator}{c}{separator}</TD></TR>' for c in columns]),
                                   """"</TABLE> """,
 
                                   '>']), _attributes=node_attributes)
-
-    schema_tables_only = {(s, t) for (s, t, _) in tables}
+    shown_tables = [f'{s}__{t}' for (s, t, _) in tables]
     for rel in fk_relationships:
         # NOTE: currently cross-schema relationships are retrieved but not displayed
-        if (schema, rel.source_table) in schema_tables_only and (schema, rel.target_table) in schema_tables_only:
-            graph.edge(rel.source_table, rel.target_table)
+        source_name = f'{rel.source_schema}__{rel.source_table}'
+        target_name = f'{rel.target_schema}__{rel.target_table}'
+        if source_name in shown_tables and target_name in shown_tables:
+            graph.edge(source_name, target_name)
     return graph.pipe('svg').decode('utf-8')
+
+
+@mara_db.route('/svg/<string:db_alias>/<string:schemas>')
+@acl.require_permission(acl_resource)
+def get_svg(db_alias: str, schemas: str):
+    """Shows a chart of the tables and FK relationships in a given database and schema list"""
+    if db_alias not in config.databases():
+        return response.Response(status_code=400, title=f'unkown database {db_alias}',
+                                 html=f'Error, database {db_alias} is unknown')
+
+    db = config.databases()[db_alias]
+    return draw_schema(db, schemas.split('|'))
+
 
 
 @mara_db.route('/<string:db_alias>', defaults={'schema': None})
@@ -97,7 +111,7 @@ def index_page(db_alias: str, schema: str = None):
         title='DB Schemas',
         html=[
             bootstrap.card(header_left='Schemas',
-                           body=[_.p()['Database object of kind:'], repr(db)]),
+                           body=['<testtag>', _.p()['Database object of kind:'], repr(db)]),
             bootstrap.card(body=[
                 _.h1()['Schema: ', schema],
                 draw_schema(db, schema)

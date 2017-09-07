@@ -4,6 +4,7 @@ from sqlalchemy import engine
 
 from mara_db.views import FKRelationship
 
+
 def list_schemas(db: engine.Engine) -> List[str]:
     """List the schema names in the given database.
 
@@ -16,7 +17,7 @@ def list_schemas(db: engine.Engine) -> List[str]:
     return [row['schema_name'] for row in db.execute("""select schema_name from information_schema.schemata""").fetchall()]
 
 
-def list_tables_and_columns(db: engine.Engine, schema: str) -> List[Tuple[str, str, List[str]]]:
+def list_tables_and_columns(db: engine.Engine, schemas: List[str]) -> List[Tuple[str, str, List[str]]]:
     """List the table names  in the given schema, ignoring inherited tables (only show father.
 
     Args:
@@ -26,19 +27,19 @@ def list_tables_and_columns(db: engine.Engine, schema: str) -> List[Tuple[str, s
     Returns:
        List[str, List[str]]: List of table names, without schema prefix, and their columns
     """
-    raw_result = [(row['tablename'], row['column_name']) for row in db.execute("""select tablename, column_name
+    raw_result = [(row['cur_schema'], row['tablename'], row['column_name']) for row in db.execute("""select tablename, column_name, col.table_schema AS cur_schema
     from pg_tables pt
       JOIN information_schema.columns col
       ON col.table_name = pt.tablename AND col.table_schema = pt.schemaname
-    where schemaname=%(schema_name)s AND tablename NOT IN (SELECT c.relname AS tablename
+    where schemaname IN %(schema_list)s AND tablename NOT IN (SELECT c.relname AS tablename
     FROM pg_inherits JOIN pg_class AS c ON (inhrelid=c.oid)
-    JOIN pg_class as p ON (inhparent=p.oid))""", schema_name=schema).fetchall()]
+    JOIN pg_class as p ON (inhparent=p.oid))""", schema_list=tuple(schemas)).fetchall()]
     columns_dict = {}
-    for table, column in raw_result:
-        if table not in columns_dict:
-            columns_dict[table] = []
-        columns_dict[table].append(column)
-    return [(schema, table, columns) for (table, columns) in columns_dict.items()]
+    for schema, table, column in raw_result:
+        if (schema, table) not in columns_dict:
+            columns_dict[(schema, table)] = []
+        columns_dict[(schema, table)].append(column)
+    return [(schema, table, columns) for ((schema, table), columns) in columns_dict.items()]
 
 def list_fk_constraints(db: engine.Engine) -> FKRelationship:
     """List the foreign key relationships in the whole databases.
