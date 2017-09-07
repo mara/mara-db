@@ -7,8 +7,7 @@ setup(
     description='Configuration and monitoring of database connections',
 
     install_requires=[
-        'SQLAlchemy>=1.1.5',
-        'pyifu'
+        'SQLAlchemy>=1.1.5'
     ],
 
     dependency_links=[],
