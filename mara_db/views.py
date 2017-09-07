@@ -38,6 +38,7 @@ def schema_color(name: str):
     hash_index = int(binascii.hexlify(m.digest()), 16)
     return schema_colors[hash_index % len(schema_colors)]
 
+
 def navigation_entry():
     return navigation.NavigationEntry(
         label='DB Schema', uri_fn=lambda: flask.url_for('mara_db.index_page', db_alias=config.mara_db_alias()),
@@ -51,8 +52,10 @@ def navigation_entry():
     )
 
 
-
 def draw_schema(db: engine.Engine, schemas: List[str] = []) -> str:
+    """
+    Produce the SVG representation of the tables and FK relationships between tables of a set of schemas.
+    """
     graph = graphviz.Graph(engine='fdp', graph_attr={'splines': 'True',
                                                      'overlap': 'ortho'})
     # graph = graphviz.Graph(engine='dot', graph_attr={'splines' : True, 'overlap' : 'ortho'})
@@ -112,12 +115,10 @@ def get_svg(db_alias: str, schemas: str):
     return draw_schema(db, schemas.split('|'))
 
 
-
-@mara_db.route('/<string:db_alias>', defaults={'schema': None})
-@mara_db.route('/<string:db_alias>/<string:schema>')
+@mara_db.route('/<string:db_alias>')
 @acl.require_permission(acl_resource)
-def index_page(db_alias: str, schema: str = None):
-    """Shows a chart of the tables and FK relationships in a given database (and schema, if present)"""
+def index_page(db_alias: str):
+    """Shows a page to let the user pick some schemas and see the tables and FK"""
     if db_alias not in config.databases():
         return response.Response(status_code=400, title=f'unkown database {db_alias}',
                                  html=[bootstrap.card(body=_.p(style='color:red')[
@@ -127,13 +128,27 @@ def index_page(db_alias: str, schema: str = None):
                                  ])])
 
     db = config.databases()[db_alias]
-    return response.Response(
-        title='DB Schemas',
-        html=[
-            bootstrap.card(header_left='Schemas',
-                           body=['<testtag>', _.p()['Database object of kind:'], repr(db)]),
-            bootstrap.card(body=[
-                _.h1()['Schema: ', schema],
-                draw_schema(db, schema)
-            ])
-        ])
+    if db.dialect.name == 'postgresql':
+        from mara_db import postgres_helper
+        available_schemas = postgres_helper.list_schemas(db)
+        return response.Response(status_code=400, title=f'unkown database {db_alias}',
+                                 html=available_schemas)
+
+    return response.Response(status_code=400, title=f'unkown database {db_alias}',
+                             html=[bootstrap.card(body=_.p(style='color:red')[
+                                 'The database alias ',
+                                 _.strong()[db_alias],
+                                 ' is of type ',
+                                 _.strong()[db.dialect.name],
+                                 ' which is not supported'
+                             ])])
+    # return response.Response(
+    #     title='DB Schemas',
+    #     html=[
+    #         bootstrap.card(header_left='Schemas',
+    #                        body=['<testtag>', _.p()['Database object of kind:'], repr(db)]),
+    #         bootstrap.card(body=[
+    #             _.h1()['Schema: ', schema],
+    #             draw_schema(db, schema)
+    #         ])
+    #     ])
