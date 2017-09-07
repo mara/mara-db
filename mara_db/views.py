@@ -1,12 +1,14 @@
 """DB schema visualization"""
 
+import functools
+from typing import List, NamedTuple, Optional, Tuple
+
 import flask
 import graphviz
-from typing import List, NamedTuple, Optional, Tuple
+from sqlalchemy import engine
 
 from mara_db import config
 from mara_page import acl, navigation, response, bootstrap, _
-from sqlalchemy import engine
 
 FKRelationship = NamedTuple("FKRelationship",
                             [('source_schema', Optional[str]), ('source_table', str), ('target_schema', Optional[str]),
@@ -16,10 +18,18 @@ mara_db = flask.Blueprint('mara_db', __name__, static_folder='static', url_prefi
 
 acl_resource = acl.AclResource(name='DB')
 
-navigation_entry = navigation.NavigationEntry(
-    label='DB Schema', uri_fn=lambda: flask.url_for('mara_db.index_page', db_alias=config.mara_db_alias()), icon='star',
-    rank=200,
-    description='Data base schemas')
+
+def navigation_entry():
+    return navigation.NavigationEntry(
+        label='DB Schema', uri_fn=lambda: flask.url_for('mara_db.index_page', db_alias=config.mara_db_alias()),
+        icon='star',
+        description='Data base schemas',
+        children=[navigation.NavigationEntry(label=db_alias, icon='database',
+                                             description=f'The schema of the {db_alias} db',
+                                             uri_fn=functools.partial(
+                                                 lambda: flask.url_for('mara_db.index_page', db_alias=db_alias)))
+                  for db_alias in config.databases().keys()]
+    )
 
 
 def draw_schema(db: engine.Engine, schema: str = None) -> str:
@@ -53,9 +63,10 @@ def draw_schema(db: engine.Engine, schema: str = None) -> str:
         separator = '  '
         graph.node(shape='plain', name=table_name,
                    label=''.join(['<',
-                                                 """ <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="1" BGCOLOR="#bbffcc"><TR><TD ALIGN="LEFT"><U><B>""",
+                                  """ <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="1" BGCOLOR="#bbffcc"><TR><TD ALIGN="LEFT"><U><B>""",
                                   table_name,
-                                                 """</B></U></TD></TR>""", ''.join([f'<TR><TD ALIGN="LEFT" >{separator}{c}{separator}</TD></TR>' for c in columns]),
+                                  """</B></U></TD></TR>""", ''.join(
+                           [f'<TR><TD ALIGN="LEFT" >{separator}{c}{separator}</TD></TR>' for c in columns]),
                                   """"</TABLE> """,
 
                                   '>']), _attributes=node_attributes)
