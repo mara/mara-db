@@ -65,7 +65,8 @@ def navigation_entry():
     )
 
 
-def draw_schema(db: engine.Engine, schemas: List[str] = [], hide_columns: bool = False) -> Tuple[str, List[TableDescriptor], List[FKRelationship]]:
+def draw_schema(db: engine.Engine, schemas: List[str] = [], hide_columns: bool = False) -> Tuple[
+    str, List[TableDescriptor], List[FKRelationship]]:
     """
     Produce the SVG representation of the tables and FK relationships between tables of a set of schemas.
     Also include metadata about generated SVG (list of displayed tables, schemas and relationships)
@@ -80,7 +81,7 @@ def draw_schema(db: engine.Engine, schemas: List[str] = [], hide_columns: bool =
     # original: fdp, nicest:neato or twopi
     # 'dot', 'neato', 'twopi', 'circo', 'fdp', 'sfdp', 'patchwork', 'osage',
     graph = graphviz.Digraph(engine='neato', graph_attr={'splines': 'True',
-                                                     'overlap': 'ortho'})
+                                                         'overlap': 'ortho'})
     # graph = graphviz.Graph(engine='dot', graph_attr={'splines' : True, 'overlap' : 'ortho'})
 
     node_attributes = {'fontname': 'Helvetica, Arial, sans-serif',  # use website default
@@ -112,7 +113,8 @@ def draw_schema(db: engine.Engine, schemas: List[str] = [], hide_columns: bool =
                                   f""" <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="1" BGCOLOR="{schema_color(schema_name)}"><TR><TD ALIGN="LEFT"><U><B>""",
                                   f'{schema_name}.{table_name}' if len(schemas) > 1 else table_name,
                                   """</B></U></TD></TR>""", ''.join(
-                           [f'<TR><TD ALIGN="LEFT" >{separator}{c}{separator}</TD></TR>' for c in columns]) if not hide_columns else '',
+                           [f'<TR><TD ALIGN="LEFT" >{separator}{c}{separator}</TD></TR>' for c in
+                            columns]) if not hide_columns else '',
                                   """"</TABLE> """,
 
                                   '>']), _attributes=node_attributes)
@@ -168,12 +170,16 @@ def index_page(db_alias: str):
                                          body=f'The database source {db_alias} has no schemas suitable for displaying (no tables with foreign key constraints)')])
 
         return response.Response(title=f'Schemas of {db_alias}',
-                                 html=[''.join(['<script src="',
-                                                flask.url_for('mara_db.static', filename='mara_db.js'),
-                                                '">', '</script>']), bootstrap.card(body=''.join([
-                                     f'<span class="schema_selector" data-schema-name="{s}" data-active-style="color:{schema_color(s)}"> <label><input class="schema_checkbox" data-schema-name="{s}" data-db-name="{db_alias}" type="checkbox" value="{s}"> {s}</label> </span>'
-                                     for s in available_schemas
-                                 ] + ["""
+                                 html=[''.join([
+                                     '<script src="', flask.url_for('mara_db.static', filename='mara_db.js'), '">',
+                                     '</script>',
+                                     '<script src="', flask.url_for('mara_db.static', filename='filesaver.min.js'),
+                                     '">', '</script>'
+                                 ])
+                                     , bootstrap.card(body=''.join([
+                                                                       f'<span class="schema_selector" data-schema-name="{s}" data-active-style="color:{schema_color(s)}"> <label><input class="schema_checkbox" data-schema-name="{s}" data-db-name="{db_alias}" type="checkbox" value="{s}"> {s}</label> </span>'
+                                                                       for s in available_schemas
+                                                                   ] + ["""
                                  <select id="show-columns-flag" class="custom-select">
   <option selected>Show columns...</option>
   <option value="show">Show columns</option>
@@ -181,7 +187,9 @@ def index_page(db_alias: str):
 </select>
                                  """]), sections=[_.div(id="svg_display")['']]),
 
-                                       ])
+                                 ], action_buttons=[response.ActionButton('javascript:exportSVGFile()', 'Export as SVG', 'Save current chart as SVG', 'save'),
+
+            ])
 
     return response.Response(status_code=400, title=f'unkown database {db_alias}',
                              html=[bootstrap.card(body=_.p(style='color:red')[
