@@ -165,7 +165,7 @@ def index_page(db_alias: str):
                                                 '">', '</script>']), bootstrap.card(body=''.join([
                                      f'<span class="schema_selector" data-schema-name="{s}" data-active-style="color:{schema_color(s)}"> <label><input class="schema_checkbox" data-schema-name="{s}" data-db-name="{db_alias}" type="checkbox" value="{s}"> {s}</label> </span>' for s in available_schemas
                                  ])),
-                                       _.div(id="svg_display")['aa','bb']
+                                       _.div(id="svg_display")['']
                                        ])
 
     return response.Response(status_code=400, title=f'unkown database {db_alias}',
