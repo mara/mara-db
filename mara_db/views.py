@@ -80,8 +80,8 @@ def draw_schema(db: engine.Engine, schemas: List[str] = []) -> Tuple[str, List[T
                                                      'overlap': 'ortho'})
     # graph = graphviz.Graph(engine='dot', graph_attr={'splines' : True, 'overlap' : 'ortho'})
 
-    node_attributes = {'fontname': ' ',  # use website default
-                       'fontsize': '10.5px'  # fontsize unfortunately must be set
+    node_attributes = {'fontname': 'Helvetica, Arial, sans-serif',  # use website default
+                       'fontsize': '9.5px'  # fontsize unfortunately must be set
                        }
 
     tables: List[TableDescriptor]
@@ -103,7 +103,7 @@ def draw_schema(db: engine.Engine, schemas: List[str] = []) -> Tuple[str, List[T
         # The tool is able to calculate the display size of the label and display edges in the correct position,
         # so there are no particular limits on the content of a node
         # However, columns names sometime overflow so a separator is added as a suffix and prefix to take some space
-        separator = '  '
+        separator = '      '
         graph.node(shape='plain', name=f'{schema_name}___{table_name}',
                    label=''.join(['<',
                                   f""" <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="1" BGCOLOR="{schema_color(schema_name)}"><TR><TD ALIGN="LEFT"><U><B>""",
