@@ -113,7 +113,7 @@ def draw_schema(db: engine.Engine, schemas: List[str] = []) -> Tuple[str, List[T
                                   """"</TABLE> """,
 
                                   '>']), _attributes=node_attributes)
-    shown_tables = {f'{s}___{t}': cols  for (s, t, cols) in tables}
+    shown_tables = {f'{s}___{t}': cols for (s, t, cols) in tables}
     shown_relationships: List[Tuple[str, str]] = []
 
     for rel in fk_relationships:
@@ -137,7 +137,7 @@ def get_svg(db_alias: str, schemas: str):
     db = config.databases()[db_alias]
     rendered_svg = draw_schema(db, schemas.split('|'))
     return flask.jsonify({
-        'svg' : rendered_svg[0],
+        'svg': rendered_svg[0],
         'tables': rendered_svg[1],
         'relationships': rendered_svg[2]
     })
@@ -159,13 +159,19 @@ def index_page(db_alias: str):
     if db.dialect.name == 'postgresql':
         from mara_db import postgres_helper
         available_schemas = postgres_helper.list_schemas(db)
+        if len(available_schemas) == 0:
+            return response.Response(title=f'No schemas to display for {db_alias}',
+                                     html=[bootstrap.card(
+                                         body=f'The database source {db_alias} has no schemas suitable for displaying (no tables with foreign key constraints)')])
+
         return response.Response(title=f'Schemas of {db_alias}',
                                  html=[''.join(['<script src="',
                                                 flask.url_for('mara_db.static', filename='mara_db.js'),
                                                 '">', '</script>']), bootstrap.card(body=''.join([
-                                     f'<span class="schema_selector" data-schema-name="{s}" data-active-style="color:{schema_color(s)}"> <label><input class="schema_checkbox" data-schema-name="{s}" data-db-name="{db_alias}" type="checkbox" value="{s}"> {s}</label> </span>' for s in available_schemas
-                                 ])),
-                                       _.div(id="svg_display")['']
+                                     f'<span class="schema_selector" data-schema-name="{s}" data-active-style="color:{schema_color(s)}"> <label><input class="schema_checkbox" data-schema-name="{s}" data-db-name="{db_alias}" type="checkbox" value="{s}"> {s}</label> </span>'
+                                     for s in available_schemas
+                                 ]), sections=[_.div(id="svg_display")['']]),
+
                                        ])
 
     return response.Response(status_code=400, title=f'unkown database {db_alias}',
