@@ -74,9 +74,11 @@ def draw_schema(db: engine.Engine, schemas: List[str] = []) -> Tuple[str, List[T
         schemas: list of schemas to consider
 
     Returns:
-
+        A tuple with three elements in this order: the SVG as a string, the list of tables in it and the list of relationships
     """
-    graph = graphviz.Graph(engine='fdp', graph_attr={'splines': 'True',
+    # original: fdp, nicest:neato or twopi
+    # 'dot', 'neato', 'twopi', 'circo', 'fdp', 'sfdp', 'patchwork', 'osage',
+    graph = graphviz.Digraph(engine='neato', graph_attr={'splines': 'True',
                                                      'overlap': 'ortho'})
     # graph = graphviz.Graph(engine='dot', graph_attr={'splines' : True, 'overlap' : 'ortho'})
 
