@@ -1,6 +1,8 @@
 'use strict';
 
 const displaySchemaList = function (db_name, schema_list, hide_columns = false) {
+    if (schema_list.length === 0 )
+        return;
     document.getElementById('svg_display').innerHTML = 'Loading...';
     let r = new XMLHttpRequest();
     r.open("GET", `svg/${db_name}/${schema_list.join('|')}${ hide_columns ? '?no_columns=1':'' }`, true);
