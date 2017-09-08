@@ -1,9 +1,9 @@
 'use strict';
 
-const displaySchemaList = function (db_name, schema_list) {
+const displaySchemaList = function (db_name, schema_list, hide_columns = false) {
     document.getElementById('svg_display').innerHTML = 'Loading...';
     let r = new XMLHttpRequest();
-    r.open("GET", `svg/${db_name}/${schema_list.join('|')}`, true);
+    r.open("GET", `svg/${db_name}/${schema_list.join('|')}${ hide_columns ? '?no_columns=1':'' }`, true);
     r.onreadystatechange = function () {
         if (r.readyState !== 4 || r.status !== 200) return;
         updateSchemaDisplay(JSON.parse(r.responseText));
@@ -26,13 +26,12 @@ document.addEventListener("DOMContentLoaded", function () {
             console.error(`something went wrong while parsing the localStorage list of schemas to display`, err);
         }
     }
-
+    document.getElementById('show-columns-flag').addEventListener('change', function() {
+        displaySchemaList(location.href.split('/').slice(-1), Array.from(selected_schemas), this.value === 'hide');
+    });
     displaySchemaList(location.href.split('/').slice(-1), Array.from(selected_schemas));
     for (let chbox of document.getElementsByClassName('schema_checkbox')) {
         if (chbox.tagName === 'INPUT') {
-            console.log(selected_schemas);
-            console.log(chbox.dataset.schemaName);
-            console.log(selected_schemas.has(chbox.dataset.schemaName));
             if (selected_schemas.has(chbox.dataset.schemaName)){
                 chbox.checked = true;
                 chbox.parentNode.parentNode.style.cssText = chbox.parentNode.parentNode.dataset.activeStyle;
@@ -40,7 +39,7 @@ document.addEventListener("DOMContentLoaded", function () {
             else {
                 chbox.selected = false;
             }
-            chbox.addEventListener('change', function () {
+            chbox.addEventListener('change',  function()  {
                 const spanLabel = this.parentNode.parentNode;
                 if (this.checked) {
                     spanLabel.style.cssText = spanLabel.dataset.activeStyle;
@@ -50,7 +49,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     selected_schemas.delete(this.dataset.schemaName);
                 }
                 localStorage.setItem('database-schema-params', JSON.stringify(Array.from(selected_schemas)));
-                displaySchemaList(this.dataset.dbName, Array.from(selected_schemas));
+                displaySchemaList(this.dataset.dbName, Array.from(selected_schemas), document.getElementById('show-columns-flag').value === 'hide');
             });
         }
     }
