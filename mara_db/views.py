@@ -15,6 +15,7 @@ from mara_page import acl, navigation, response, bootstrap, _
 FKRelationship = NamedTuple("FKRelationship",
                             [('source_schema', Optional[str]), ('source_table', str), ('target_schema', Optional[str]),
                              ('target_table', str)])
+TableDescriptor = Tuple[Optional[str], str, List[str]]
 
 mara_db = flask.Blueprint('mara_db', __name__, static_folder='static', url_prefix='/db')
 
@@ -64,9 +65,16 @@ def navigation_entry():
     )
 
 
-def draw_schema(db: engine.Engine, schemas: List[str] = []) -> str:
+def draw_schema(db: engine.Engine, schemas: List[str] = []) -> Tuple[str, List[TableDescriptor], List[FKRelationship]]:
     """
     Produce the SVG representation of the tables and FK relationships between tables of a set of schemas.
+    Also include metadata about generated SVG (list of displayed tables, schemas and relationships)
+    Args:
+        db: database on which to operate
+        schemas: list of schemas to consider
+
+    Returns:
+
     """
     graph = graphviz.Graph(engine='fdp', graph_attr={'splines': 'True',
                                                      'overlap': 'ortho'})
@@ -76,8 +84,8 @@ def draw_schema(db: engine.Engine, schemas: List[str] = []) -> str:
                        'fontsize': '10.5px'  # fontsize unfortunately must be set
                        }
 
-    tables: List[Tuple[Optional[str], str, List[str]]]
-    fk_relationships: FKRelationship
+    tables: List[TableDescriptor]
+    fk_relationships: List[FKRelationship]
 
     if db.dialect.name == 'postgresql':
         from mara_db import postgres_helper
@@ -96,7 +104,7 @@ def draw_schema(db: engine.Engine, schemas: List[str] = []) -> str:
         # so there are no particular limits on the content of a node
         # However, columns names sometime overflow so a separator is added as a suffix and prefix to take some space
         separator = '  '
-        graph.node(shape='plain', name=f'{schema_name}__{table_name}',
+        graph.node(shape='plain', name=f'{schema_name}___{table_name}',
                    label=''.join(['<',
                                   f""" <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="1" BGCOLOR="{schema_color(schema_name)}"><TR><TD ALIGN="LEFT"><U><B>""",
                                   f'{schema_name}.{table_name}' if len(schemas) > 1 else table_name,
@@ -105,14 +113,17 @@ def draw_schema(db: engine.Engine, schemas: List[str] = []) -> str:
                                   """"</TABLE> """,
 
                                   '>']), _attributes=node_attributes)
-    shown_tables = [f'{s}__{t}' for (s, t, _) in tables]
+    shown_tables = {f'{s}___{t}': cols  for (s, t, cols) in tables}
+    shown_relationships: List[Tuple[str, str]] = []
+
     for rel in fk_relationships:
         # NOTE: currently cross-schema relationships are retrieved but not displayed
-        source_name = f'{rel.source_schema}__{rel.source_table}'
-        target_name = f'{rel.target_schema}__{rel.target_table}'
+        source_name = f'{rel.source_schema}___{rel.source_table}'
+        target_name = f'{rel.target_schema}___{rel.target_table}'
         if source_name in shown_tables and target_name in shown_tables:
             graph.edge(source_name, target_name)
-    return graph.pipe('svg').decode('utf-8')
+            shown_relationships.append((source_name, target_name))
+    return (graph.pipe('svg').decode('utf-8'), shown_tables, shown_relationships)
 
 
 @mara_db.route('/svg/<string:db_alias>/<string:schemas>')
@@ -124,7 +135,12 @@ def get_svg(db_alias: str, schemas: str):
                                  html=f'Error, database {db_alias} is unknown')
 
     db = config.databases()[db_alias]
-    return draw_schema(db, schemas.split('|'))
+    rendered_svg = draw_schema(db, schemas.split('|'))
+    return flask.jsonify({
+        'svg' : rendered_svg[0],
+        'tables': rendered_svg[1],
+        'relationships': rendered_svg[2]
+    })
 
 
 @mara_db.route('/<string:db_alias>')
@@ -147,8 +163,10 @@ def index_page(db_alias: str):
                                  html=[''.join(['<script src="',
                                                 flask.url_for('mara_db.static', filename='mara_db.js'),
                                                 '">', '</script>']), bootstrap.card(body=''.join([
-                                     f'<input type="checkbox" value="{s}"> {s} ' for s in available_schemas
-                                 ]))])
+                                     f'<span class="schema_selector" data-schema-name="{s}" data-active-style="color:{schema_color(s)}"> <label><input class="schema_checkbox" data-schema-name="{s}" data-db-name="{db_alias}" type="checkbox" value="{s}"> {s}</label> </span>' for s in available_schemas
+                                 ])),
+                                       _.div(id="svg_display")['aa','bb']
+                                       ])
 
     return response.Response(status_code=400, title=f'unkown database {db_alias}',
                              html=[bootstrap.card(body=_.p(style='color:red')[
