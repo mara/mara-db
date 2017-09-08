@@ -1,6 +1,7 @@
 'use strict';
 
 const displaySchemaList = function (db_name, schema_list) {
+    document.getElementById('svg_display').innerHTML = 'Loading...';
     let r = new XMLHttpRequest();
     r.open("GET", `svg/${db_name}/${schema_list.join('|')}`, true);
     r.onreadystatechange = function () {
