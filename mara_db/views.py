@@ -65,23 +65,27 @@ def navigation_entry():
     )
 
 
-def draw_schema(db: engine.Engine, schemas: List[str] = []) -> Tuple[str, List[TableDescriptor], List[FKRelationship]]:
+def draw_schema(db: engine.Engine, schemas: List[str] = [], hide_columns: bool = False) -> Tuple[
+    str, List[TableDescriptor], List[FKRelationship]]:
     """
     Produce the SVG representation of the tables and FK relationships between tables of a set of schemas.
     Also include metadata about generated SVG (list of displayed tables, schemas and relationships)
     Args:
         db: database on which to operate
         schemas: list of schemas to consider
+        hide_columns: if True, the chart will not show the column names
 
     Returns:
-
+        A tuple with three elements in this order: the SVG as a string, the list of tables in it and the list of relationships
     """
-    graph = graphviz.Graph(engine='fdp', graph_attr={'splines': 'True',
-                                                     'overlap': 'ortho'})
+    # original: fdp, nicest:neato or twopi
+    # 'dot', 'neato', 'twopi', 'circo', 'fdp', 'sfdp', 'patchwork', 'osage',
+    graph = graphviz.Digraph(engine='neato', graph_attr={'splines': 'True',
+                                                         'overlap': 'ortho'})
     # graph = graphviz.Graph(engine='dot', graph_attr={'splines' : True, 'overlap' : 'ortho'})
 
     node_attributes = {'fontname': 'Helvetica, Arial, sans-serif',  # use website default
-                       'fontsize': '9.5px'  # fontsize unfortunately must be set
+                       'fontsize': '9.0px'  # fontsize unfortunately must be set
                        }
 
     tables: List[TableDescriptor]
@@ -109,7 +113,8 @@ def draw_schema(db: engine.Engine, schemas: List[str] = []) -> Tuple[str, List[T
                                   f""" <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="1" BGCOLOR="{schema_color(schema_name)}"><TR><TD ALIGN="LEFT"><U><B>""",
                                   f'{schema_name}.{table_name}' if len(schemas) > 1 else table_name,
                                   """</B></U></TD></TR>""", ''.join(
-                           [f'<TR><TD ALIGN="LEFT" >{separator}{c}{separator}</TD></TR>' for c in columns]),
+                           [f'<TR><TD ALIGN="LEFT" >{separator}{c}{separator}</TD></TR>' for c in
+                            columns]) if not hide_columns else '',
                                   """"</TABLE> """,
 
                                   '>']), _attributes=node_attributes)
@@ -135,7 +140,7 @@ def get_svg(db_alias: str, schemas: str):
                                  html=f'Error, database {db_alias} is unknown')
 
     db = config.databases()[db_alias]
-    rendered_svg = draw_schema(db, schemas.split('|'))
+    rendered_svg = draw_schema(db, schemas.split('|'), 'no_columns' in flask.request.args)
     return flask.jsonify({
         'svg': rendered_svg[0],
         'tables': rendered_svg[1],
@@ -165,14 +170,26 @@ def index_page(db_alias: str):
                                          body=f'The database source {db_alias} has no schemas suitable for displaying (no tables with foreign key constraints)')])
 
         return response.Response(title=f'Schemas of {db_alias}',
-                                 html=[''.join(['<script src="',
-                                                flask.url_for('mara_db.static', filename='mara_db.js'),
-                                                '">', '</script>']), bootstrap.card(body=''.join([
-                                     f'<span class="schema_selector" data-schema-name="{s}" data-active-style="color:{schema_color(s)}"> <label><input class="schema_checkbox" data-schema-name="{s}" data-db-name="{db_alias}" type="checkbox" value="{s}"> {s}</label> </span>'
-                                     for s in available_schemas
-                                 ]), sections=[_.div(id="svg_display")['']]),
+                                 html=[''.join([
+                                     '<script src="', flask.url_for('mara_db.static', filename='mara_db.js'), '">',
+                                     '</script>',
+                                     '<script src="', flask.url_for('mara_db.static', filename='filesaver.min.js'),
+                                     '">', '</script>'
+                                 ])
+                                     , bootstrap.card(body=''.join([
+                                                                       f'<span class="schema_selector" data-schema-name="{s}" data-active-style="color:{schema_color(s)}"> <label><input class="schema_checkbox" data-schema-name="{s}" data-db-name="{db_alias}" type="checkbox" value="{s}"> {s}</label> </span>'
+                                                                       for s in available_schemas
+                                                                   ] + ["""
+                                 <select id="show-columns-flag" class="custom-select">
+  <option selected>Show columns...</option>
+  <option value="show">Show columns</option>
+  <option value="hide">Hide columns</option>
+</select>
+                                 """]), sections=[_.div(id="svg_display")['']]),
 
-                                       ])
+                                 ], action_buttons=[response.ActionButton('javascript:exportSVGFile()', 'Export as SVG', 'Save current chart as SVG', 'save'),
+
+            ])
 
     return response.Response(status_code=400, title=f'unkown database {db_alias}',
                              html=[bootstrap.card(body=_.p(style='color:red')[
