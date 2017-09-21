@@ -11,6 +11,6 @@ with dbs.session_context('mara') as session:
 ```      
 
 
-When used inside mara-app web interface, it adds an interactive schema visualizer.
+When used inside mara-app web interface, it adds an interactive schema visualizer:
 
 ![Alt text](/ui_screenshot_1.png?raw=true "Mara-db schema visualizer")
