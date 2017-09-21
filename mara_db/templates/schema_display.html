@@ -1,0 +1,26 @@
+<script src="{{ url_for('mara_db.static', filename='mara_db.js') }}"></script>
+<script src="{{ url_for('mara_db.static', filename='filesaver.min.js') }}"></script>
+<div class="card mara-card">
+    <div class="card-block">
+        <div class="card-block-content">
+            {% for current_schema in schema_display %}
+            <span class="schema_selector" data-schema-name="{{ current_schema.name }}" data-active-style="color:{{ current_schema.color }}">
+                <label><input class="schema_checkbox" data-schema-name="{{ current_schema.name }}" data-db-name="{{ db_alias }}" type="checkbox" value="{{ current_schema.name }}">
+                    {{ current_schema.name }}
+                </label>
+            </span>
+            {% endfor %}
+
+            <select id="show-columns-flag" class="custom-select">
+                <option selected>Show columns...</option>
+                <option value="show">Show columns</option>
+                <option value="hide">Hide columns</option>
+            </select>
+        </div>
+    </div>
+    <div class="card-block card-section">
+        <div class="card-block-content">
+            <div id="svg_display"></div>
+        </div>
+    </div>
+</div>
