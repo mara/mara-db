@@ -8,7 +8,8 @@ setup(
 
     install_requires=[
         'SQLAlchemy>=1.1.5',
-        'graphviz>=0.8'
+        'graphviz>=0.8',
+        'sqlalchemy-utils'
     ],
 
     dependency_links=[],
