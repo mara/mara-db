@@ -42,6 +42,9 @@ def schema_color(name: str):
     Returns:
        str: An RGB color in hex format, always the same for the same string
     """
+    # no schema? Light gray
+    if name is None:
+        return '#EEEEEE'
     # python hash function is not guaranteed to give the same result across versions or implementations
     m = hashlib.sha256()
     m.update(name.encode())
