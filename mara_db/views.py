@@ -17,7 +17,7 @@ FKRelationship = NamedTuple("FKRelationship",
                              ('target_table', str)])
 TableDescriptor = Tuple[Optional[str], str, List[str]]
 
-mara_db = flask.Blueprint('mara_db', __name__, static_folder='static', url_prefix='/db')
+mara_db = flask.Blueprint('mara_db', __name__, static_folder='static', template_folder='templates', url_prefix='/db')
 
 acl_resource = acl.AclResource(name='DB')
 
@@ -124,7 +124,6 @@ def draw_schema(db: engine.Engine, schemas: List[str] = [], hide_columns: bool =
     shown_relationships: List[Tuple[str, str]] = []
 
     for rel in fk_relationships:
-        # NOTE: currently cross-schema relationships are retrieved but not displayed
         source_name = f'{rel.source_schema}___{rel.source_table}'
         target_name = f'{rel.target_schema}___{rel.target_table}'
         if source_name in shown_tables and target_name in shown_tables:
@@ -170,25 +169,12 @@ def index_page(db_alias: str):
                                  html=[bootstrap.card(
                                      body=f'The database source {db_alias} has no schemas suitable for displaying (no tables with foreign key constraints)')])
 
+    schema_display = [{'name': s, 'color': schema_color(s)} for s in available_schemas]
+
     return response.Response(title=f'Schemas of {db_alias}',
-                             html=[''.join([
-                                 '<script src="', flask.url_for('mara_db.static', filename='mara_db.js'), '">',
-                                 '</script>',
-                                 '<script src="', flask.url_for('mara_db.static', filename='filesaver.min.js'),
-                                 '">', '</script>'
-                             ])
-                                 , bootstrap.card(body=''.join([
-                                                                   f'<span class="schema_selector" data-schema-name="{s}" data-active-style="color:{schema_color(s)}"> <label><input class="schema_checkbox" data-schema-name="{s}" data-db-name="{db_alias}" type="checkbox" value="{s}"> {s}</label> </span>'
-                                                                   for s in available_schemas
-                                                               ] + ["""
-                             <select id="show-columns-flag" class="custom-select">
-<option selected>Show columns...</option>
-<option value="show">Show columns</option>
-<option value="hide">Hide columns</option>
-</select>
-                             """]), sections=[_.div(id="svg_display")['']]),
-
-                             ], action_buttons=[response.ActionButton('javascript:exportSVGFile()', 'Export as SVG', 'Save current chart as SVG', 'save'),
-
-        ])
-
+                             html=flask.render_template('schema_display.html', schema_display=schema_display,
+                                                        db_alias=db_alias),
+                             action_buttons=[response.ActionButton('javascript:exportSVGFile()',
+                                                                   'Export as SVG',
+                                                                   'Save current chart as SVG',
+                                                                   'save'), ])
