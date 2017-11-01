@@ -20,7 +20,6 @@ def list_schemas(db: sa.engine.Engine) -> List[str]:
     for schema_name in sa.inspect(db).get_schema_names():
         # TODO determine whether the schema has FK constraints or not
         schemas.add(schema_name)
-
     return list(schemas)
 
 
@@ -63,13 +62,12 @@ def list_tables_and_columns(db: sa.engine.Engine, schemas: List[str]) -> List[Tu
         return [(schema, table, columns) for ((schema, table), columns) in columns_dict.items()]
 
     inspector = sa.engine.reflection.Inspector.from_engine(db)
-    schemas_and_tables = __list_schemas_and_tables(inspector)
+    schemas_and_tables = __list_schemas_and_tables(inspector, schemas)
 
     res: List[Tuple[str, str, List[str]]] = []
     for (schema, table) in schemas_and_tables:
         # schema could be None, that is expected from DBMS like MySQL and SQLAlchemy accepts it
         res.append((schema, table, [t['name'] for t in inspector.get_columns(table, schema=schema)]))
-
     return res
 
 
@@ -89,10 +87,6 @@ def list_fk_constraints(db: sa.engine.Engine) -> FKRelationship:
     result: List[FKRelationship] = []
 
     for (schema, table_name) in schemas_and_tables:
-        tuned_schema = schema
-        # workaround for strange SQLite behavior, see https://groups.google.com/forum/#!topic/sqlalchemy/rG-8JtiHXZE
-        if tuned_schema == 'main' and db.dialect.name == 'sqlite':
-            tuned_schema = None
-        for fk in inspector.get_foreign_keys(table_name, schema=tuned_schema):
-            result.append(FKRelationship(tuned_schema, table_name, fk.get('referred_schema', None), fk['referred_table']))
+        for fk in inspector.get_foreign_keys(table_name, schema=schema):
+            result.append(FKRelationship(schema, table_name, fk.get('referred_schema', None), fk['referred_table']))
     return result

@@ -154,7 +154,7 @@ def get_svg(db_alias: str, schemas: str):
 def get_structure(db_alias: str, schemas: str):
     """Retrieve a JSON with the tables and FK relationships in a given database and schema list"""
     if db_alias not in config.databases():
-        return response.Response(status_code=400, title=f'unkown database {db_alias}',
+        return response.Response(status=400, title=f'unkown database {db_alias}',
                                  html=f'Error, database {db_alias} is unknown')
 
     db = config.databases()[db_alias]
