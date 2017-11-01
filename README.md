@@ -1,4 +1,6 @@
 # Mara DB
+[![Build Status](https://travis-ci.org/mara/mara-db.svg?branch=master)](https://travis-ci.org/mara/mara-db)
+
 
 Mini package that "owns" the configuration and monitoring of database connections. Decouples the use of databases 
 and their configuration by using "aliases" for databases. 

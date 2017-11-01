@@ -62,5 +62,6 @@ class TestApp:
             else:
                 assert set(columns) == set(['column_X', 'column_Y'])
 
+
 if __name__ == "__main__":
     pytest.main()
