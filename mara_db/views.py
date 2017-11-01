@@ -2,19 +2,16 @@
 
 import binascii
 import hashlib
-from typing import List, NamedTuple, Optional, Tuple
+from typing import List, Optional, Tuple
 import functools
 
 import flask
 import graphviz
 from sqlalchemy import engine
 
-from mara_db import config
+from mara_db import config, generic_db_helper
 from mara_page import acl, navigation, response, bootstrap, _
 
-FKRelationship = NamedTuple("FKRelationship",
-                            [('source_schema', Optional[str]), ('source_table', str), ('target_schema', Optional[str]),
-                             ('target_table', str)])
 TableDescriptor = Tuple[Optional[str], str, List[str]]
 
 mara_db = flask.Blueprint('mara_db', __name__, static_folder='static', template_folder='templates', url_prefix='/db')
@@ -65,38 +62,33 @@ def navigation_entry():
     )
 
 
-def draw_schema(db: engine.Engine, schemas: List[str] = [], hide_columns: bool = False) -> Tuple[
-    str, List[TableDescriptor], List[FKRelationship]]:
+def draw_schema(db: engine.Engine, schemas: List[str] = [], hide_columns: bool = False, generate_svg: bool = True)\
+        -> Tuple[str, List[TableDescriptor], List[generic_db_helper.FKRelationship]]:
     """
-    Produce the SVG representation of the tables and FK relationships between tables of a set of schemas.
+    Produce the representation and if requested the corrsponding SVG of the tables and FK relationships between tables of a set of schemas.
     Also include metadata about generated SVG (list of displayed tables, schemas and relationships)
     Args:
         db: database on which to operate
         schemas: list of schemas to consider
         hide_columns: if True, the chart will not show the column names
-
+        generate_svg: whether or not generate the SVG
     Returns:
-        A tuple with three elements in this order: the SVG as a string, the list of tables in it and the list of relationships
+        A tuple with three elements in this order: the SVG as a string (or None if generate_svg is False)
+        , the list of tables in it and the list of relationships
     """
     # original: fdp, nicest:neato or twopi
     # 'dot', 'neato', 'twopi', 'circo', 'fdp', 'sfdp', 'patchwork', 'osage',
-    graph = graphviz.Digraph(engine='neato', graph_attr={'splines': 'True',
-                                                         'overlap': 'ortho'})
-    # graph = graphviz.Graph(engine='dot', graph_attr={'splines' : True, 'overlap' : 'ortho'})
+    if generate_svg:
+        graph = graphviz.Digraph(engine='neato', graph_attr={'splines': 'True',
+                                                             'overlap': 'ortho'})
+        # graph = graphviz.Graph(engine='dot', graph_attr={'splines' : True, 'overlap' : 'ortho'})
 
-    node_attributes = {'fontname': 'Helvetica, Arial, sans-serif',  # use website default
-                       'fontsize': '9.0px'  # fontsize unfortunately must be set
-                       }
+        node_attributes = {'fontname': 'Helvetica, Arial, sans-serif',  # use website default
+                           'fontsize': '9.0px'  # fontsize unfortunately must be set
+                           }
 
-    tables: List[TableDescriptor]
-    fk_relationships: List[FKRelationship]
-    from mara_db import generic_db_helper
     tables = generic_db_helper.list_tables_and_columns(db, schemas)
     fk_relationships = generic_db_helper.list_fk_constraints(db)
-    # if db.dialect.name == 'postgresql':
-    #     from mara_db import postgres_helper
-    #     tables = postgres_helper.list_tables_and_columns(db, schemas)
-    #     fk_relationships = postgres_helper.list_fk_constraints(db)
 
     for schema_name, table_name, columns in tables:
         # NOTE: there are limits on what can be put on a label.
@@ -110,16 +102,17 @@ def draw_schema(db: engine.Engine, schemas: List[str] = [], hide_columns: bool =
         # so there are no particular limits on the content of a node
         # However, columns names sometime overflow so a separator is added as a suffix and prefix to take some space
         separator = '      '
-        graph.node(shape='plain', name=f'{schema_name}___{table_name}',
-                   label=''.join(['<',
-                                  f""" <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="1" BGCOLOR="{schema_color(schema_name)}"><TR><TD ALIGN="LEFT"><U><B>""",
-                                  f'{schema_name}.{table_name}' if len(schemas) > 1 else table_name,
-                                  """</B></U></TD></TR>""", ''.join(
-                           [f'<TR><TD ALIGN="LEFT" >{separator}{c}{separator}</TD></TR>' for c in
-                            columns]) if not hide_columns else '',
-                                  """"</TABLE> """,
+        if generate_svg:
+            graph.node(shape='plain', name=f'{schema_name}___{table_name}',
+                       label=''.join(['<',
+                                      f""" <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="1" BGCOLOR="{schema_color(schema_name)}"><TR><TD ALIGN="LEFT"><U><B>""",
+                                      f'{schema_name}.{table_name}' if len(schemas) > 1 else table_name,
+                                      """</B></U></TD></TR>""", ''.join(
+                               [f'<TR><TD ALIGN="LEFT" >{separator}{c}{separator}</TD></TR>' for c in
+                                columns]) if not hide_columns else '',
+                                      """"</TABLE> """,
 
-                                  '>']), _attributes=node_attributes)
+                                      '>']), _attributes=node_attributes)
     shown_tables = {f'{s}___{t}': cols for (s, t, cols) in tables}
     shown_relationships: List[Tuple[str, str]] = []
 
@@ -127,9 +120,13 @@ def draw_schema(db: engine.Engine, schemas: List[str] = [], hide_columns: bool =
         source_name = f'{rel.source_schema}___{rel.source_table}'
         target_name = f'{rel.target_schema}___{rel.target_table}'
         if source_name in shown_tables and target_name in shown_tables:
-            graph.edge(source_name, target_name)
+            if generate_svg:
+                graph.edge(source_name, target_name)
             shown_relationships.append((source_name, target_name))
-    return (graph.pipe('svg').decode('utf-8'), shown_tables, shown_relationships)
+    if generate_svg:
+        return (graph.pipe('svg').decode('utf-8'), shown_tables, shown_relationships)
+    else:
+        return (None, shown_tables, shown_relationships)
 
 
 @mara_db.route('/svg/<string:db_alias>/<string:schemas>')
@@ -146,6 +143,22 @@ def get_svg(db_alias: str, schemas: str):
         'svg': rendered_svg[0],
         'tables': rendered_svg[1],
         'relationships': rendered_svg[2]
+    })
+
+
+@mara_db.route('/json/<string:db_alias>/<string:schemas>')
+@acl.require_permission(acl_resource)
+def get_structure(db_alias: str, schemas: str):
+    """Retrieve a JSON with the tables and FK relationships in a given database and schema list"""
+    if db_alias not in config.databases():
+        return response.Response(status_code=400, title=f'unkown database {db_alias}',
+                                 html=f'Error, database {db_alias} is unknown')
+
+    db = config.databases()[db_alias]
+    description = draw_schema(db, schemas.split('|'), 'no_columns' in flask.request.args, generate_svg=False)
+    return flask.jsonify({
+        'tables': description[1],
+        'relationships': description[2]
     })
 
 

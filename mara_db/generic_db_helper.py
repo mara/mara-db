@@ -1,9 +1,10 @@
-from typing import List, Tuple, Set
+from typing import List, NamedTuple, Optional, Set, Tuple
 
 import sqlalchemy as sa
 
-from mara_db.views import FKRelationship
-
+FKRelationship = NamedTuple("FKRelationship",
+                            [('source_schema', Optional[str]), ('source_table', str), ('target_schema', Optional[str]),
+                             ('target_table', str)])
 
 def list_schemas(db: sa.engine.Engine) -> List[str]:
     """List the __relevant__ schema names in the given database. Ignores scheme without FK relationships inside
