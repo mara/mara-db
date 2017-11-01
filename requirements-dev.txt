@@ -5,3 +5,5 @@ pytest-runner
 Flask==0.12.2
 alembic>=0.8.10
 sqlalchemy_utils>=0.32.19
+SQLAlchemy>=1.1.14
+graphviz>=0.8
