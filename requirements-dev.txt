@@ -1,0 +1,7 @@
+-e git+https://github.com/mara/mara-page.git#egg=mara-page
+-e git+https://github.com/mara/mara-app.git@log-monkey-patching#egg=mara-app
+-e git+https://github.com/mara/mara-db.git#egg=mara-db
+pytest-runner
+Flask==0.12.2
+alembic>=0.8.10
+sqlalchemy_utils>=0.32.19

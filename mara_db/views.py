@@ -137,7 +137,7 @@ def draw_schema(db: engine.Engine, schemas: List[str] = [], hide_columns: bool =
 def get_svg(db_alias: str, schemas: str):
     """Shows a chart of the tables and FK relationships in a given database and schema list"""
     if db_alias not in config.databases():
-        return response.Response(status_code=400, title=f'unkown database {db_alias}',
+        return response.Response(status=400, title=f'unkown database {db_alias}',
                                  html=f'Error, database {db_alias} is unknown')
 
     db = config.databases()[db_alias]
@@ -170,7 +170,7 @@ def get_structure(db_alias: str, schemas: str):
 def index_page(db_alias: str):
     """Shows a page to let the user pick some schemas and see the tables and FK"""
     if db_alias not in config.databases():
-        return response.Response(status_code=400, title=f'unkown database {db_alias}',
+        return response.Response(status=404, title=f'unkown database {db_alias}',
                                  html=[bootstrap.card(body=_.p(style='color:red')[
                                      'The database alias ',
                                      _.strong()[db_alias],

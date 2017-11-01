@@ -87,7 +87,12 @@ def list_fk_constraints(db: sa.engine.Engine) -> FKRelationship:
     schemas = inspector.get_schema_names()
     schemas_and_tables = __list_schemas_and_tables(inspector, schemas)
     result: List[FKRelationship] = []
+
     for (schema, table_name) in schemas_and_tables:
-        for fk in inspector.get_foreign_keys(table_name, schema=schema):
-            result.append(FKRelationship(schema, table_name, fk.get('referred_schema', None), fk['referred_table']))
+        tuned_schema = schema
+        # workaround for strange SQLite behavior, see https://groups.google.com/forum/#!topic/sqlalchemy/rG-8JtiHXZE
+        if tuned_schema == 'main' and db.dialect.name == 'sqlite':
+            tuned_schema = None
+        for fk in inspector.get_foreign_keys(table_name, schema=tuned_schema):
+            result.append(FKRelationship(tuned_schema, table_name, fk.get('referred_schema', None), fk['referred_table']))
     return result

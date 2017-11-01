@@ -9,15 +9,18 @@ setup(
     install_requires=[
         'SQLAlchemy>=1.1.5',
         'graphviz>=0.8',
-        'sqlalchemy-utils'
+        'sqlalchemy-utils',
+        'mara-app',
+        'mara-page',
+        'flask'
     ],
-
-    dependency_links=[],
+    tests_require=['pytest'],
 
     packages=find_packages(),
 
     author='Mara contributors',
     license='MIT',
 
-    entry_points={}
+    entry_points={},
+    python_requires='>=3.6'
 )
