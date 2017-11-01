@@ -90,11 +90,13 @@ def draw_schema(db: engine.Engine, schemas: List[str] = [], hide_columns: bool =
 
     tables: List[TableDescriptor]
     fk_relationships: List[FKRelationship]
-
-    if db.dialect.name == 'postgresql':
-        from mara_db import postgres_helper
-        tables = postgres_helper.list_tables_and_columns(db, schemas)
-        fk_relationships = postgres_helper.list_fk_constraints(db)
+    from mara_db import generic_db_helper
+    tables = generic_db_helper.list_tables_and_columns(db, schemas)
+    fk_relationships = generic_db_helper.list_fk_constraints(db)
+    # if db.dialect.name == 'postgresql':
+    #     from mara_db import postgres_helper
+    #     tables = postgres_helper.list_tables_and_columns(db, schemas)
+    #     fk_relationships = postgres_helper.list_fk_constraints(db)
 
     for schema_name, table_name, columns in tables:
         # NOTE: there are limits on what can be put on a label.
@@ -161,41 +163,32 @@ def index_page(db_alias: str):
                                  ])])
 
     db = config.databases()[db_alias]
-    if db.dialect.name == 'postgresql':
-        from mara_db import postgres_helper
-        available_schemas = postgres_helper.list_schemas(db)
-        if len(available_schemas) == 0:
-            return response.Response(title=f'No schemas to display for {db_alias}',
-                                     html=[bootstrap.card(
-                                         body=f'The database source {db_alias} has no schemas suitable for displaying (no tables with foreign key constraints)')])
+    from mara_db import generic_db_helper
+    available_schemas = generic_db_helper.list_schemas(db)
+    if len(available_schemas) == 0:
+        return response.Response(title=f'No schemas to display for {db_alias}',
+                                 html=[bootstrap.card(
+                                     body=f'The database source {db_alias} has no schemas suitable for displaying (no tables with foreign key constraints)')])
 
-        return response.Response(title=f'Schemas of {db_alias}',
-                                 html=[''.join([
-                                     '<script src="', flask.url_for('mara_db.static', filename='mara_db.js'), '">',
-                                     '</script>',
-                                     '<script src="', flask.url_for('mara_db.static', filename='filesaver.min.js'),
-                                     '">', '</script>'
-                                 ])
-                                     , bootstrap.card(body=''.join([
-                                                                       f'<span class="schema_selector" data-schema-name="{s}" data-active-style="color:{schema_color(s)}"> <label><input class="schema_checkbox" data-schema-name="{s}" data-db-name="{db_alias}" type="checkbox" value="{s}"> {s}</label> </span>'
-                                                                       for s in available_schemas
-                                                                   ] + ["""
-                                 <select id="show-columns-flag" class="custom-select">
-  <option selected>Show columns...</option>
-  <option value="show">Show columns</option>
-  <option value="hide">Hide columns</option>
+    return response.Response(title=f'Schemas of {db_alias}',
+                             html=[''.join([
+                                 '<script src="', flask.url_for('mara_db.static', filename='mara_db.js'), '">',
+                                 '</script>',
+                                 '<script src="', flask.url_for('mara_db.static', filename='filesaver.min.js'),
+                                 '">', '</script>'
+                             ])
+                                 , bootstrap.card(body=''.join([
+                                                                   f'<span class="schema_selector" data-schema-name="{s}" data-active-style="color:{schema_color(s)}"> <label><input class="schema_checkbox" data-schema-name="{s}" data-db-name="{db_alias}" type="checkbox" value="{s}"> {s}</label> </span>'
+                                                                   for s in available_schemas
+                                                               ] + ["""
+                             <select id="show-columns-flag" class="custom-select">
+<option selected>Show columns...</option>
+<option value="show">Show columns</option>
+<option value="hide">Hide columns</option>
 </select>
-                                 """]), sections=[_.div(id="svg_display")['']]),
+                             """]), sections=[_.div(id="svg_display")['']]),
 
-                                 ], action_buttons=[response.ActionButton('javascript:exportSVGFile()', 'Export as SVG', 'Save current chart as SVG', 'save'),
+                             ], action_buttons=[response.ActionButton('javascript:exportSVGFile()', 'Export as SVG', 'Save current chart as SVG', 'save'),
 
-            ])
+        ])
 
-    return response.Response(status_code=400, title=f'unkown database {db_alias}',
-                             html=[bootstrap.card(body=_.p(style='color:red')[
-                                 'The database alias ',
-                                 _.strong()[db_alias],
-                                 ' is of type ',
-                                 _.strong()[db.dialect.name],
-                                 ' which is not supported'
-                             ])])

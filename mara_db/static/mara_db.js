@@ -22,7 +22,10 @@
         let r = new XMLHttpRequest();
         r.open("GET", `svg/${db_name}/${schema_list.join('|')}${ hide_columns ? '?no_columns=1' : '' }`, true);
         r.onreadystatechange = function () {
-            if (r.readyState !== 4 || r.status !== 200) return;
+            if (r.readyState !== 4 || r.status !== 200) {
+                document.getElementById('svg_display').innerHTML = `Error: ${r.responseText}`;
+                return;
+            }
             updateSchemaDisplay(JSON.parse(r.responseText));
         };
         r.send();
