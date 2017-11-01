@@ -11,26 +11,26 @@ from mara_app.app import MaraApp
 from mara_app import monkey_patch
 import mara_db
 
-test_target = str(pathlib.Path(tempfile.mkdtemp()) / 'test_mara_db.db')
-conn = sqlite3.connect(test_target)
-conn.execute('CREATE TABLE table_one(column_one INTEGER, column_two TEXT)')
-conn.execute("""CREATE TABLE table_two(
-column_X INTEGER,
-column_Y TEXT,
-FOREIGN KEY(column_X) REFERENCES table_one(column_one)
-)""")
 
-conn.close()
 
-print('DATABASE:', test_target, file=sys.stderr)
 
-@monkey_patch.patch(mara_db.config.databases, 'Replace the default database with a mockup')
-def wrapper():
-    return {'test_db': engine.create_engine(f'sqlite+pysqlite:////{test_target}')}
+
 
 class TestApp:
     @pytest.fixture(autouse=True)
     def set_up(self):
+        test_target = str(pathlib.Path(tempfile.mkdtemp()) / 'test_mara_db.db')
+        conn = sqlite3.connect(test_target)
+        conn.execute('CREATE TABLE table_one(column_one INTEGER, column_two TEXT)')
+        conn.execute("""CREATE TABLE table_two(
+        column_X INTEGER,
+        column_Y TEXT,
+        FOREIGN KEY(column_X) REFERENCES table_one(column_one)
+        )""")
+        conn.close()
+        @monkey_patch.patch(mara_db.config.databases, 'Replace the default database with a mockup')
+        def wrapper():
+            return {'test_db': engine.create_engine(f'sqlite+pysqlite:////{test_target}')}
         app = MaraApp()
         self.app = app.test_client()
 
