@@ -5,6 +5,10 @@ python:
   - "3.6-dev" # 3.6 development branch
   - "3.7-dev" # 3.7 development branch
   - "nightly" # currently points to 3.7-dev
-script: pytest
-install: pip3 install -r requirements-dev.txt
+script:
+  - pytest
+  - mypy --ignore-missing-imports mara_db
+install:
+  - pip3 install -r requirements-dev.txt
+  - pip3 install mypy
 
