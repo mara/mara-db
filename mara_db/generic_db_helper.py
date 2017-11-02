@@ -1,4 +1,4 @@
-from typing import List, NamedTuple, Optional, Set, Tuple
+from typing import Dict, List, NamedTuple, Optional, Set, Tuple
 
 import sqlalchemy as sa
 
@@ -34,7 +34,7 @@ def __list_schemas_and_tables(inspector, schemas: List[str] = None) -> List[Tupl
 
 
 def list_tables_and_columns(db: sa.engine.Engine, schemas: List[str]) -> List[Tuple[str, str, List[str]]]:
-    """List the table names  in the given schema, ignoring inherited tables (only show father.
+    """List the table names  in the given schema, ignoring inherited tables (only show parent).
 
     Args:
        db: SQLAlchemy engine instance.
@@ -54,7 +54,7 @@ def list_tables_and_columns(db: sa.engine.Engine, schemas: List[str]) -> List[Tu
         where schemaname IN %(schema_list)s AND tablename NOT IN (SELECT c.relname AS tablename
         FROM pg_inherits JOIN pg_class AS c ON (inhrelid=c.oid)
         JOIN pg_class as p ON (inhparent=p.oid))""", schema_list=tuple(schemas)).fetchall()]
-        columns_dict = {}
+        columns_dict: Dict[Tuple[str, str], List[str]] = {}
         for schema, table, column in raw_result:
             if (schema, table) not in columns_dict:
                 columns_dict[(schema, table)] = []
@@ -71,7 +71,7 @@ def list_tables_and_columns(db: sa.engine.Engine, schemas: List[str]) -> List[Tu
     return res
 
 
-def list_fk_constraints(db: sa.engine.Engine) -> FKRelationship:
+def list_fk_constraints(db: sa.engine.Engine) -> List[FKRelationship]:
     """List the foreign key relationships in the whole databases.
         Includes cross-schema relationships
 

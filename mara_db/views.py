@@ -2,7 +2,7 @@
 
 import binascii
 import hashlib
-from typing import List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 import functools
 
 import flask
@@ -12,25 +12,23 @@ from sqlalchemy import engine
 from mara_db import config, generic_db_helper
 from mara_page import acl, navigation, response, bootstrap, _
 
-TableDescriptor = Tuple[Optional[str], str, List[str]]
 
 mara_db = flask.Blueprint('mara_db', __name__, static_folder='static', template_folder='templates', url_prefix='/db')
 
-acl_resource = acl.AclResource(name='DB')
+acl_db_schema_access = acl.AclResource(name='DB')
 
-schema_colors = ['#8B0000', '#A52A2A', '#B22222', '#DC143C', '#FF0000', '#FF6347', '#FF7F50', '#CD5C5C', '#F08080',
-                 '#E9967A', '#FA8072', '#FFA07A', '#FF4500', '#FF8C00', '#FFA500', '#FFD700', '#B8860B', '#DAA520',
-                 '#EEE8AA', '#BDB76B', '#F0E68C', '#808000', '#FFFF00', '#9ACD32', '#556B2F', '#6B8E23', '#7CFC00',
-                 '#7FFF00', '#ADFF2F', '#006400', '#008000', '#228B22', '#00FF00', '#32CD32', '#90EE90', '#98FB98',
-                 '#8FBC8F', '#00FA9A', '#00FF7F', '#2E8B57', '#66CDAA', '#3CB371', '#20B2AA', '#2F4F4F', '#008080',
-                 '#008B8B', '#00FFFF', '#00FFFF', '#E0FFFF', '#00CED1', '#40E0D0', '#48D1CC', '#AFEEEE', '#7FFFD4',
-                 '#B0E0E6', '#5F9EA0', '#4682B4', '#6495ED', '#00BFFF', '#1E90FF', '#ADD8E6', '#87CEEB', '#87CEFA',
-                 '#191970', '#000080', '#00008B', '#0000CD', '#0000FF', '#4169E1', '#8A2BE2', '#4B0082', '#483D8B',
-                 '#6A5ACD', '#7B68EE', '#9370DB', '#8B008B', '#9400D3', '#9932CC', '#BA55D3', '#800080', '#D8BFD8',
-                 '#DDA0DD', '#EE82EE', '#FF00FF', '#DA70D6', '#C71585', '#DB7093', '#FF1493', '#FF69B4', '#FFB6C1',
-                 '#FFC0CB', '#FAEBD7', '#F5F5DC', '#FFE4C4', '#FFEBCD', '#F5DEB3', '#FFF8DC', '#FFFACD', '#FAFAD2',
-                 '#FFFFE0', '#8B4513', '#A0522D', '#D2691E', '#CD853F', '#F4A460', '#DEB887', '#D2B48C', '#BC8F8F',
-                 '#FFE4B5', '#FFDEAD']
+schema_colors = ['#a6cee3',
+                 '#1f78b4',
+                 '#b2df8a',
+                 '#33a02c',
+                 '#fb9a99',
+                 '#e31a1c',
+                 '#fdbf6f',
+                 '#ff7f00',
+                 '#cab2d6',
+                 '#6a3d9a',
+                 '#ffff99',
+                 '#b15928']
 
 
 @functools.lru_cache(None)
@@ -66,7 +64,7 @@ def navigation_entry():
 
 
 def draw_schema(db: engine.Engine, schemas: List[str] = [], hide_columns: bool = False, generate_svg: bool = True)\
-        -> Tuple[str, List[TableDescriptor], List[generic_db_helper.FKRelationship]]:
+        -> Tuple[Optional[str], Dict[str, List[str]], List[Tuple[str, str]]]:
     """
     Produce the representation and if requested the corrsponding SVG of the tables and FK relationships between tables of a set of schemas.
     Also include metadata about generated SVG (list of displayed tables, schemas and relationships)
@@ -76,8 +74,10 @@ def draw_schema(db: engine.Engine, schemas: List[str] = [], hide_columns: bool =
         hide_columns: if True, the chart will not show the column names
         generate_svg: whether or not generate the SVG
     Returns:
-        A tuple with three elements in this order: the SVG as a string (or None if generate_svg is False)
-        , the list of tables in it and the list of relationships
+        A tuple with three elements in this order:
+        * the SVG as a string (or None if generate_svg is False)
+        * the list of tables in it
+        * the list of foreign key relationships
     """
     # original: fdp, nicest:neato or twopi
     # 'dot', 'neato', 'twopi', 'circo', 'fdp', 'sfdp', 'patchwork', 'osage',
@@ -133,7 +133,7 @@ def draw_schema(db: engine.Engine, schemas: List[str] = [], hide_columns: bool =
 
 
 @mara_db.route('/svg/<string:db_alias>/<string:schemas>')
-@acl.require_permission(acl_resource)
+@acl.require_permission(acl_db_schema_access)
 def get_svg(db_alias: str, schemas: str):
     """Shows a chart of the tables and FK relationships in a given database and schema list"""
     if db_alias not in config.databases():
@@ -149,8 +149,8 @@ def get_svg(db_alias: str, schemas: str):
     })
 
 
-@mara_db.route('/json/<string:db_alias>/<string:schemas>')
-@acl.require_permission(acl_resource)
+@mara_db.route('/json/<string:db_alias>/<string:schemas>.json')
+@acl.require_permission(acl_db_schema_access)
 def get_structure(db_alias: str, schemas: str):
     """Retrieve a JSON with the tables and FK relationships in a given database and schema list"""
     if db_alias not in config.databases():
@@ -166,7 +166,7 @@ def get_structure(db_alias: str, schemas: str):
 
 
 @mara_db.route('/<string:db_alias>')
-@acl.require_permission(acl_resource)
+@acl.require_permission(acl_db_schema_access)
 def index_page(db_alias: str):
     """Shows a page to let the user pick some schemas and see the tables and FK"""
     if db_alias not in config.databases():
