@@ -46,7 +46,7 @@ class TestApp:
         assert response.status_code == 404
 
     def test_test_db_content(self):
-        response = self.app.get("/db/json/test_db/main")
+        response = self.app.get("/db/json/test_db/main.json")
         assert response.status_code == 200
         chart = json.loads(response.get_data(as_text=True))
         assert 'relationships' in chart
