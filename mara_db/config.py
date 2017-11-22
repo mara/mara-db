@@ -1,11 +1,10 @@
 """Configuration of database connections"""
 
-from sqlalchemy import engine
+import sqlalchemy.engine.url
 
-
-def databases() -> {str: engine.Engine}:
+def database_urls() -> {str: sqlalchemy.engine.url}:
     """The list of database connections to use, by alias"""
-    return {'mara': engine.create_engine('postgresql+psycopg2://root@localhost/mara')}
+    return {'mara': sqlalchemy.engine.url.make_url('postgresql+psycopg2://root@localhost/mara')}
 
 
 def mara_db_alias() -> str:
