@@ -1,10 +1,10 @@
 """Configuration of database connections"""
+from mara_db import dbs
 
-import sqlalchemy.engine.url
 
-def database_urls() -> {str: sqlalchemy.engine.url}:
+def databases() -> {str: dbs.DB}:
     """The list of database connections to use, by alias"""
-    return {'mara': sqlalchemy.engine.url.make_url('postgresql+psycopg2://root@localhost/mara')}
+    return {'mara': dbs.PostgreSQLDB(host='localhost', database='mara', user='root')}
 
 
 def mara_db_alias() -> str:
@@ -12,3 +12,9 @@ def mara_db_alias() -> str:
     return 'mara'
 
 
+def default_timezone() -> str:
+    """
+    The default timezone to be used for database connections
+    See: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
+    """
+    return 'Europe/Berlin'
