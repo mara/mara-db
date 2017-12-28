@@ -51,8 +51,9 @@ def postgres_cursor_context(alias: str) -> psycopg2.extensions.cursor:
     try:
         yield cursor
         connection.commit()
-    except:
+    except Exception as e:
         connection.rollback()
+        raise e
     finally:
         cursor.close()
         connection.close()
