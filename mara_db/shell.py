@@ -1,4 +1,8 @@
-"""Shell commands for accessing databases"""
+"""
+Shell command generation for
+- running queries in databases via their comannd line clients
+- copying data from, into and between databases
+"""
 
 from functools import singledispatch
 
@@ -78,15 +82,20 @@ def __(db, **_):
 
 
 @singledispatch
-def copy_to_stdout_command(alias: str):
+def copy_to_stdout_command(db: object) -> str:
     """
     Creates a shell command that receives a query from stdin, executes it and writes the output to stdout
 
     Args:
-        alias: The alias of the db configuration to use
+        db: The database in which to run the query (either an alias or a `dbs.DB` object
 
     Returns:
         The composed shell command
+
+    Example:
+        >>> print(copy_to_stdout_command(dbs.PostgreSQLDB(host='localhost', database='test')))
+        PGTZ=Europe/Berlin PGOPTIONS=--client-min-messages=warning psql --host=localhost  --no-psqlrc --set ON_ERROR_STOP=on test --tuples-only --no-align --field-separator='	' \
+            | grep -a -v -e '^$'
     """
     pass
 
@@ -124,7 +133,7 @@ def __(db, **_):
 
 
 @singledispatch
-def copy_from_stdin_command(alias: str, target_table: str,
+def copy_from_stdin_command(db: object, target_table: str,
                             csv_format: bool = False, skip_header: bool = False,
                             delimiter_char: str = None, quote_char: str = None,
                             null_value_string: str = None, timezone: str = None):
@@ -135,7 +144,7 @@ def copy_from_stdin_command(alias: str, target_table: str,
     https://www.postgresql.org/docs/current/static/sql-copy.html
 
     Args:
-        alias: The alias of the db configuration to use
+        db: The database to use (either an alias or a `dbs.DB` object
         target_table: The table in which the data is written
         csv_format: Treat the input as a CSV file (comma separated, double quoted literals)
         skip_header: When true, skip the first line
@@ -148,7 +157,7 @@ def copy_from_stdin_command(alias: str, target_table: str,
         The composed shell command
 
     Examples:
-        >>>> print(copy_from_stdin_command('mara',target_table='foo'))
+        >>>> print(copy_from_stdin_command('mara', target_table='foo'))
         PGTZ=Europe/Berlin PGOPTIONS=--client-min-messages=warning psql --username=root --host=localhost --echo-all --no-psqlrc --set ON_ERROR_STOP=on mara \
             --command="COPY foo FROM STDIN WITH CSV"
     """
@@ -208,8 +217,11 @@ def copy_command(source_db: str, target_db: str, target_table: str, timezone: st
         A shell command string
 
     Examples:
-        >>>> print(1)
-
+        >>>> print(copy_command(dbs.SQLServerDB(database='source_db'), dbs.PostgreSQLDB(database='target_db'), 'target_table', None))
+        sed 's/\\\\$/\$/g;s/\$/\\\\$/g' \
+          | sqsh  -D source_db -m csv \
+          | PGTZ=Europe/Berlin PGOPTIONS=--client-min-messages=warning psql --echo-all --no-psqlrc --set ON_ERROR_STOP=on target_db \
+               --command="COPY target_table FROM STDIN WITH CSV HEADER"
     """
     pass
 
@@ -244,9 +256,3 @@ def __(source_db: dbs.SQLServerDB, target_db: dbs.PostgreSQLDB, target_table: st
 def __(source_db, target_db, target_table, timezone):
     raise NotImplementedError(
         f'Please implement copy_command for {source_db.__class__.__name__} and {target_db.__class__.__name__}')
-
-# ------
-
-
-# print(copy_command(dbs.SQLServerDB(database='source'), dbs.PostgreSQLDB(database='target'), 'target_table', None))
-# print(copy_command(dbs.MysqlDB(database='source'), dbs.PostgreSQLDB(database='target'), 'target_table', None))

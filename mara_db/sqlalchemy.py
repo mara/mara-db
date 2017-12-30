@@ -11,8 +11,24 @@ from mara_db import dbs
 
 
 @functools.singledispatch
-def engine(alias: str) -> sqlalchemy.engine.Engine:
-    """Returns a database engine by alias"""
+def engine(db: object) -> sqlalchemy.engine.Engine:
+    """
+    Returns a sql alchemy engine for a configured database connection
+
+    Args:
+        db: The database to use (either an alias or a `dbs.DB` object
+
+    Returns:
+        The generated sqlalchemy engine
+
+    Examples:
+        >>>> print(mara_db.sqlalchemy.engine('mara'))
+        Engine(postgresql+psycopg2://None@localhost/mara)
+    """
+    pass
+
+@engine.register(str)
+def __(alias:str, **_):
     return engine(dbs.db(alias))
 
 
@@ -29,7 +45,9 @@ def __(db: dbs.PostgreSQLDB):
 
 @contextlib.contextmanager
 def session_context(alias: str) -> sqlalchemy.orm.Session:
-    """Creates a context with a sql alchemy session for a database alias """
+    """
+    Creates a context that automatically commits or rollbacks an alchemy session
+    """
     session = sqlalchemy.orm.sessionmaker(bind=engine(alias))()
     try:
         yield session
@@ -57,3 +75,5 @@ def postgres_cursor_context(alias: str) -> psycopg2.extensions.cursor:
     finally:
         cursor.close()
         connection.close()
+
+
