@@ -1,5 +1,19 @@
 # Changelog
 
+## 2.0.0
+*2017-12-20*
+
+- change database configuration from sqalchemy urls to custom database specific classes
+- create sqlalchemy session contexts from configuration objects
+- add functions for creating shell commands for accessing databases
+- add documentation
+- bug fixes
+
+**required changes**
+
+This version is pretty much incompatible with previous versions. See README.md for new usage patterns.
+
+
 ## 1.1.0 
 *2017-12-04*
 
