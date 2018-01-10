@@ -32,7 +32,7 @@ def query_command(db: object, timezone: str = None, echo_queries: bool = True) -
         >>> print(query_command(dbs.MysqlDB(host='localhost', database='test')))
         mysql --default-character-set=utf8mb4 --host=localhost test
     """
-    pass
+    raise NotImplementedError()
 
 
 @query_command.register(str)
@@ -97,7 +97,7 @@ def copy_to_stdout_command(db: object) -> str:
         PGTZ=Europe/Berlin PGOPTIONS=--client-min-messages=warning psql --host=localhost  --no-psqlrc --set ON_ERROR_STOP=on test --tuples-only --no-align --field-separator='	' \
             | grep -a -v -e '^$'
     """
-    pass
+    raise NotImplementedError()
 
 
 @copy_to_stdout_command.register(str)
@@ -161,7 +161,7 @@ def copy_from_stdin_command(db: object, target_table: str,
         PGTZ=Europe/Berlin PGOPTIONS=--client-min-messages=warning psql --username=root --host=localhost --echo-all --no-psqlrc --set ON_ERROR_STOP=on mara \
             --command="COPY foo FROM STDIN WITH CSV"
     """
-    pass
+    raise NotImplementedError()
 
 
 @copy_from_stdin_command.register(str)
@@ -223,7 +223,7 @@ def copy_command(source_db: str, target_db: str, target_table: str, timezone: st
           | PGTZ=Europe/Berlin PGOPTIONS=--client-min-messages=warning psql --echo-all --no-psqlrc --set ON_ERROR_STOP=on target_db \
                --command="COPY target_table FROM STDIN WITH CSV HEADER"
     """
-    pass
+    raise NotImplementedError()
 
 
 @copy_command.register(str, str)
