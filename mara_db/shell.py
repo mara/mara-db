@@ -7,7 +7,6 @@ Shell command generation for
 from functools import singledispatch
 
 from mara_db import dbs, config
-from multimethod import multidispatch
 
 
 @singledispatch
@@ -221,7 +220,6 @@ def get_common_copy_format(source_db: dbs.DB, target_db: dbs.DB):
     return chosen_format
 
 
-@multidispatch
 def copy_command(source_db: object, target_db: object, target_table: str, timezone: str):
     """
     Creates a shell command that
@@ -245,36 +243,11 @@ def copy_command(source_db: object, target_db: object, target_table: str, timezo
           | PGTZ=Europe/Berlin PGOPTIONS=--client-min-messages=warning psql --echo-all --no-psqlrc --set ON_ERROR_STOP=on target_db \
                --command="COPY target_table FROM STDIN WITH CSV HEADER"
     """
-    raise NotImplementedError()
-
-
-@copy_command.register(str, str)
-def __(source_db_alias: str, target_db_alias: str, target_table: str, timezone: str = None):
-    return copy_command(dbs.db(source_db_alias), dbs.db(target_db_alias), target_table, timezone)
-
-
-@copy_command.register(dbs.PostgreSQLDB, dbs.PostgreSQLDB)
-def __(source_db: dbs.PostgreSQLDB, target_db: dbs.PostgreSQLDB, target_table: str, timezone: str):
+    if isinstance(source_db, str):
+        source_db = dbs.db(source_db)
+    if isinstance(target_db, str):
+        target_db = dbs.db(target_db)
+    common_copy_format = get_common_copy_format(source_db, target_db)
     return (copy_to_stdout_command(source_db) + ' \\\n'
             + '  | ' + copy_from_stdin_command(target_db, target_table=target_table,
-                                               null_value_string='', timezone=timezone))
-
-
-@copy_command.register(dbs.MysqlDB, dbs.PostgreSQLDB)
-def __(source_db: dbs.MysqlDB, target_db: dbs.PostgreSQLDB, target_table: str, timezone: str):
-    return (copy_to_stdout_command(source_db) + ' \\\n'
-            + '  | ' + copy_from_stdin_command(target_db, target_table=target_table,
-                                               null_value_string='NULL', timezone=timezone))
-
-
-@copy_command.register(dbs.SQLServerDB, dbs.PostgreSQLDB)
-def __(source_db: dbs.SQLServerDB, target_db: dbs.PostgreSQLDB, target_table: str, timezone: str):
-    return (copy_to_stdout_command(source_db) + ' \\\n'
-            + '  | ' + copy_from_stdin_command(target_db, target_table=target_table, csv_format=True,
-                                               skip_header=True, timezone=timezone))
-
-
-@copy_command.register(dbs.DB, dbs.DB)
-def __(source_db, target_db, target_table, timezone):
-    raise NotImplementedError(
-        f'Please implement copy_command for {source_db.__class__.__name__} and {target_db.__class__.__name__}')
+                                               timezone=timezone, **common_copy_format))
