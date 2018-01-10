@@ -181,11 +181,15 @@ def __(db: dbs.PostgreSQLDB, target_table: str, csv_format: bool = False, skip_h
         sql += ' CSV'
     if skip_header:
         sql += ' HEADER'
-    if delimiter_char != None:
+    if not (delimiter_char is None
+            or (not csv_format and delimiter_char == '\t')
+            or (csv_format and delimiter_char == ',')):
         sql += f" DELIMITER AS '{delimiter_char}'"
-    if null_value_string != None:
+    if not (null_value_string is None
+            or (not csv_format and null_value_string == '\\N')
+            or (csv_format and null_value_string == '')):
         sql += f" NULL AS '{null_value_string}'"
-    if quote_char != None:
+    if not (quote_char is None or quote_char == '"'):
         sql += f" QUOTE AS '{quote_char}'"
 
     return f'{query_command(db, timezone)} \\\n      --command="{sql}"'
@@ -197,6 +201,24 @@ def __(db, **_):
 
 
 # -------------------------------
+
+
+def get_common_copy_format(source_db: dbs.DB, target_db: dbs.DB):
+    source_options = source_db.copy_to_stdout_format()
+    target_options = target_db.possible_copy_from_stdin_formats()
+    chosen_format = {}
+    for option in ['csv_format', 'skip_header', 'delimiter_char', 'quote_char', 'null_value_string']:
+        found = False
+        for value in target_options[option]:
+            if value in source_options[option]:
+                chosen_format[option] = value
+                found = True
+                break
+        if not found:
+            raise RuntimeError(f"No compatible option '{option}' for copying betwee between "
+                               f"{source_db.__class__} and {target_db.__class__}: "
+                               f"{source_options[option]} vs {target_options[option]}")
+    return chosen_format
 
 
 @multidispatch
