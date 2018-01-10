@@ -200,7 +200,7 @@ def __(db, **_):
 
 
 @multidispatch
-def copy_command(source_db: str, target_db: str, target_table: str, timezone: str):
+def copy_command(source_db: object, target_db: object, target_table: str, timezone: str):
     """
     Creates a shell command that
     - receives a sql query from stdin
