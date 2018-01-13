@@ -114,7 +114,7 @@ def __(alias: str):
 def __(db: dbs.PostgreSQLDB):
     return query_command(db, echo_queries=False) \
            + " --tuples-only --no-align --field-separator='\t' \\\n" \
-           + "  | grep -a -v -e '^$'"  # remove empty lines
+           + "  | sed '/^$/d'"  # remove empty lines
 
 
 @copy_to_stdout_command.register(dbs.MysqlDB)
