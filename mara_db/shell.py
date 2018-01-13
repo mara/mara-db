@@ -32,7 +32,7 @@ def query_command(db: object, timezone: str = None, echo_queries: bool = True) -
         >>> print(query_command(dbs.MysqlDB(host='localhost', database='test')))
         mysql --default-character-set=utf8mb4 --host=localhost test
     """
-    raise NotImplementedError()
+    raise NotImplementedError(f'Please implement query_command for type "{db.__class__.__name__}"')
 
 
 @query_command.register(str)
@@ -73,9 +73,6 @@ def __(db: dbs.SQLServerDB, timezone: str = None, echo_queries: bool = True):
             + (f' -D {db.database}' if db.database else ''))
 
 
-@query_command.register(dbs.DB)
-def __(db, **_):
-    raise NotImplementedError(f'Please implement query_command for {db.__class__.__name__}')
 
 
 # -------------------------------
@@ -97,7 +94,8 @@ def copy_to_stdout_command(db: object) -> str:
         PGTZ=Europe/Berlin PGOPTIONS=--client-min-messages=warning psql --host=localhost  --no-psqlrc --set ON_ERROR_STOP=on test --tuples-only --no-align --field-separator='	' \
             | grep -a -v -e '^$'
     """
-    raise NotImplementedError()
+    raise NotImplementedError(f'Please implement function copy_to_stdout_command for type "{db.__class__.__name__}"')
+
 
 
 @copy_to_stdout_command.register(str)
@@ -124,9 +122,6 @@ def __(db: dbs.SQLServerDB):
     return "sed 's/\\\\\\\\$/\$/g;s/\$/\\\\\\\\$/g' \\\n  | " + query_command(db) + " -m csv"
 
 
-@copy_to_stdout_command.register(dbs.DB)
-def __(db, **_):
-    raise NotImplementedError(f'Please implement function copy_to_stdout_command for {db.__class__.__name__}')
 
 
 # -------------------------------
@@ -161,7 +156,7 @@ def copy_from_stdin_command(db: object, target_table: str,
         PGTZ=Europe/Berlin PGOPTIONS=--client-min-messages=warning psql --username=root --host=localhost --echo-all --no-psqlrc --set ON_ERROR_STOP=on mara \
             --command="COPY foo FROM STDIN WITH CSV"
     """
-    raise NotImplementedError()
+    raise NotImplementedError(f'Please implement copy_from_stdin_command for type "{db.__class__.__name__}"')
 
 
 @copy_from_stdin_command.register(str)
@@ -191,9 +186,6 @@ def __(db: dbs.PostgreSQLDB, target_table: str, csv_format: bool = False, skip_h
     return f'{query_command(db, timezone)} \\\n      --command="{sql}"'
 
 
-@copy_from_stdin_command.register(dbs.DB)
-def __(db, **_):
-    raise NotImplementedError(f'Please implement copy_from_stdin_command for {db.__class__.__name__}')
 
 
 # -------------------------------
@@ -223,7 +215,9 @@ def copy_command(source_db: object, target_db: object, target_table: str, timezo
           | PGTZ=Europe/Berlin PGOPTIONS=--client-min-messages=warning psql --echo-all --no-psqlrc --set ON_ERROR_STOP=on target_db \
                --command="COPY target_table FROM STDIN WITH CSV HEADER"
     """
-    raise NotImplementedError()
+    raise NotImplementedError(
+        f'Please implement copy_command for types "{source_db.__class__.__name__}" and "{target_db.__class__.__name__}"')
+
 
 
 @copy_command.register(str, str)
