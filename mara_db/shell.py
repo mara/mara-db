@@ -66,7 +66,14 @@ def __(db: dbs.MysqlDB, timezone: str = None, echo_queries: bool = True):
 
 @query_command.register(dbs.SQLServerDB)
 def __(db: dbs.SQLServerDB, timezone: str = None, echo_queries: bool = True):
-    return ('sqsh '
+    # sqsh is not able to use '$' directly, it has to be quoted by two backslashes
+    # first, undo the quoting in case it has already been applied, then quote
+    command = "sed 's/\\\\\\\\$/\$/g;s/\$/\\\\\\\\$/g' | "
+
+    # sqsh does not do anything when a statement is not terminated by a ';', add on to be sure
+    command += "(cat && echo ';') \\\n  | "
+
+    return (command + 'sqsh '
             + (f' -U {db.user}' if db.user else '')
             + (f' -P {db.password}' if db.password else '')
             + (f' -S {db.host}' if db.host else '')
@@ -117,9 +124,7 @@ def __(db: dbs.MysqlDB):
 
 @copy_to_stdout_command.register(dbs.SQLServerDB)
 def __(db: dbs.SQLServerDB):
-    # sqsh is not able to use '$' directly, it has to be quoted by two backslashes
-    # first, undo the quoting in case it has already been applied, then quote
-    return "sed 's/\\\\\\\\$/\$/g;s/\$/\\\\\\\\$/g' \\\n  | " + query_command(db) + " -m csv"
+    return query_command(db) + " -m csv"
 
 
 
@@ -246,7 +251,3 @@ def __(source_db: dbs.SQLServerDB, target_db: dbs.PostgreSQLDB, target_table: st
                                                skip_header=True, timezone=timezone))
 
 
-@copy_command.register(dbs.DB, dbs.DB)
-def __(source_db, target_db, target_table, timezone):
-    raise NotImplementedError(
-        f'Please implement copy_command for {source_db.__class__.__name__} and {target_db.__class__.__name__}')
