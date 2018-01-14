@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.0.1
+*2017-01-14*
+
+- various smaller improvements in mara_db/shell.py
+
+
 ## 2.0.0
 *2017-12-20*
 
