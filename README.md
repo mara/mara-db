@@ -2,7 +2,7 @@
 
 Mini package for configuring and accessing multiple databases in a single project. Decouples the use of databases and their configuration by using "aliases" for databases.
  
-The file [mara_db/dbs.py](mara_db/dbs.py) contains abstract database configurations for PostgreSQL, Mysql and SQL Server. The database connections of a project are configured by overwriting the `databases` function in [mara_db/config.py](mara_db/config.py):
+The file [mara_db/dbs.py](mara_db/dbs.py) contains abstract database configurations for PostgreSQL, Mysql, SQL Server and SQLite. The database connections of a project are configured by overwriting the `databases` function in [mara_db/config.py](mara_db/config.py):
 
 ```python
 import mara_db.config

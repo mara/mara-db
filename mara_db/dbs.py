@@ -1,6 +1,7 @@
 """Abstract definition of database connections"""
 
 import functools
+import pathlib
 
 from mara_db import config
 
@@ -16,7 +17,6 @@ def db(alias):
 
 class DB:
     """Generic database connection definition"""
-
     def __repr__(self) -> str:
         return (f'<{self.__class__.__name__}: '
                 + ', '.join([f'{var}={"*****" if var =="password" else getattr(self,var)}'
@@ -52,3 +52,8 @@ class SQLServerDB(DB):
         self.database = database
         self.user = user
         self.password = password
+
+
+class SQLiteDB(DB):
+    def __init__(self, file_name: pathlib.Path) -> None:
+        self.file_name = file_name

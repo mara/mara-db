@@ -4,6 +4,7 @@ Shell command generation for
 - copying data from, into and between databases
 """
 
+import shlex
 from functools import singledispatch
 
 from mara_db import dbs, config
@@ -80,6 +81,12 @@ def __(db: dbs.SQLServerDB, timezone: str = None, echo_queries: bool = True):
             + (f' -D {db.database}' if db.database else ''))
 
 
+@query_command.register(dbs.SQLiteDB)
+def __(db: dbs.SQLiteDB, timezone: str = None, echo_queries: bool = True):
+    # sqlite does not complain if a file does not exist. Therefore check file existence first
+    file_name = shlex.quote(str(db.file_name))
+    return f'(test -f {file_name} && cat || >&2 echo {file_name} not found) \\\n' \
+           + '  | sqlite3 -bail ' + shlex.quote(str(db.file_name))
 
 
 # -------------------------------
@@ -104,7 +111,6 @@ def copy_to_stdout_command(db: object) -> str:
     raise NotImplementedError(f'Please implement function copy_to_stdout_command for type "{db.__class__.__name__}"')
 
 
-
 @copy_to_stdout_command.register(str)
 def __(alias: str):
     return copy_to_stdout_command(dbs.db(alias))
@@ -127,6 +133,9 @@ def __(db: dbs.SQLServerDB):
     return query_command(db) + " -m csv"
 
 
+@copy_to_stdout_command.register(dbs.SQLiteDB)
+def __(db: dbs.SQLiteDB):
+    return query_command(db) + " -noheader -separator '\t'"
 
 
 # -------------------------------
@@ -191,8 +200,6 @@ def __(db: dbs.PostgreSQLDB, target_table: str, csv_format: bool = False, skip_h
     return f'{query_command(db, timezone)} \\\n      --command="{sql}"'
 
 
-
-
 # -------------------------------
 
 
@@ -224,10 +231,14 @@ def copy_command(source_db: object, target_db: object, target_table: str, timezo
         f'Please implement copy_command for types "{source_db.__class__.__name__}" and "{target_db.__class__.__name__}"')
 
 
-
 @copy_command.register(str, str)
 def __(source_db_alias: str, target_db_alias: str, target_table: str, timezone: str = None):
     return copy_command(dbs.db(source_db_alias), dbs.db(target_db_alias), target_table, timezone)
+
+
+@copy_command.register(dbs.DB, str)
+def __(source_db: dbs.DB, target_db_alias: str, target_table: str, timezone: str = None):
+    return copy_command(source_db, dbs.db(target_db_alias), target_table, timezone)
 
 
 @copy_command.register(dbs.PostgreSQLDB, dbs.PostgreSQLDB)
@@ -251,3 +262,8 @@ def __(source_db: dbs.SQLServerDB, target_db: dbs.PostgreSQLDB, target_table: st
                                                skip_header=True, timezone=timezone))
 
 
+@copy_command.register(dbs.SQLiteDB, dbs.PostgreSQLDB)
+def __(source_db: dbs.SQLiteDB, target_db: dbs.PostgreSQLDB, target_table: str, timezone: str):
+    return (copy_to_stdout_command(source_db) + ' \\\n'
+            + '  | ' + copy_from_stdin_command(target_db, target_table=target_table, timezone=timezone,
+                                               null_value_string=''))
