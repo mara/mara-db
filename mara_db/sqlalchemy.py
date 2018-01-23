@@ -4,6 +4,7 @@ import contextlib
 import functools
 
 import psycopg2.extensions
+import psycopg2
 import sqlalchemy
 import sqlalchemy.engine
 import sqlalchemy.orm
@@ -62,9 +63,10 @@ def session_context(alias: str) -> sqlalchemy.orm.Session:
 @contextlib.contextmanager
 def postgres_cursor_context(alias: str) -> psycopg2.extensions.cursor:
     """Creates a context with a psycopg2 cursor for a database alias"""
-    _engine = engine(alias)
-    assert (_engine.dialect.name == 'postgresql')
-    connection = _engine.raw_connection().connection  # type: psycopg2.extensions.connection
+    db = dbs.db(alias)
+    assert(isinstance(db,dbs.PostgreSQLDB))
+    connection = psycopg2.connect(dbname=db.database, user=db.user, password=db.password,
+                                  host=db.host, port=db.port) # type: psycopg2.extensions.connection
     cursor = connection.cursor()  # type: psycopg2.extensions.cursor
     try:
         yield cursor

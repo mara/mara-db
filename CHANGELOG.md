@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.1.1
+*2017-01-23*
+
+- don't use sqlalchemy session in postgres_cursor_context because it creates to many setup queries on each instantiation
+
+
 ## 2.1.0
 *2017-01-19*
 
