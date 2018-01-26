@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.1.2
+*2017-01-26*
+
+- always append ';\n\go' to queries against SQL Server
+
+
 ## 2.1.1
 *2017-01-23*
 
