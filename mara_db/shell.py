@@ -57,7 +57,7 @@ def __(db: dbs.PostgreSQLDB, timezone: str = None, echo_queries: bool = True):
 @query_command.register(dbs.MysqlDB)
 def __(db: dbs.MysqlDB, timezone: str = None, echo_queries: bool = True):
     return ((f"MYSQL_PWD='{db.password}' " if db.password else '')
-            + 'mysql --default-character-set=utf8mb4'
+            + 'mysql '
             + (f' --user={db.user}' if db.user else '')
             + (f' --host={db.host}' if db.host else '')
             + (f' --port={db.port}' if db.port else '')

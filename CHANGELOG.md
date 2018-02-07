@@ -1,24 +1,30 @@
 # Changelog
 
+## 2.1.3
+*2018-02-07*
+
+- remove default-character-set=utf8mb4 from My SQL queries
+
+
 ## 2.1.2
-*2017-01-26*
+*2018-01-26*
 
 - always append ';\n\go' to queries against SQL Server
 
 
 ## 2.1.1
-*2017-01-23*
+*2018-01-23*
 
 - don't use sqlalchemy session in postgres_cursor_context because it creates to many setup queries on each instantiation
 
 
 ## 2.1.0
-*2017-01-19*
+*2018-01-19*
 
 - add SQLite support
 
 ## 2.0.1
-*2017-01-14*
+*2018-01-14*
 
 - various smaller improvements in mara_db/shell.py
 
