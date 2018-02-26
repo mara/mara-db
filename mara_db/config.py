@@ -1,5 +1,6 @@
 """Configuration of database connections"""
 from mara_db import dbs
+import typing
 
 
 def databases() -> {str: dbs.DB}:
@@ -18,3 +19,8 @@ def default_timezone() -> str:
     See: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
     """
     return 'Europe/Berlin'
+
+
+def schema_ui_foreign_key_column_regex() -> typing.Pattern:
+    """A regex that classifies a table column as being used in a foreign constraint (for coloring missing constraints)"""
+    return r'.*_fk$'

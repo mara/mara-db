@@ -80,5 +80,3 @@ with mara_db.sqlalchemy.session_context(mara_db.dbs.PostgreSQLDB(host='localhost
     print(session.execute("SELECT 1").scalar())
 # -> 1
 ```
-
-

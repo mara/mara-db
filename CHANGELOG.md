@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.2.0
+
+- add web ui for visualizing database schemas (postgres only currently)
+
+
 ## 2.1.3
 *2018-02-07*
 
