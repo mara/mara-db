@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.2.1
+*2018-03-19*
+
+- improve acl
+
+
 ## 2.2.0
 
 - add web ui for visualizing database schemas (postgres only currently)

@@ -12,7 +12,7 @@ from mara_page import acl, navigation, response, bootstrap, html, _, xml
 
 blueprint = flask.Blueprint('mara_db', __name__, static_folder='static', template_folder='templates', url_prefix='/db')
 
-acl_resource = acl.AclResource(name='DB')
+acl_resource = acl.AclResource(name='DB Schema')
 
 
 def navigation_entry():
@@ -30,7 +30,6 @@ def navigation_entry():
 
 
 @blueprint.route('/<string:db_alias>')
-@acl.require_permission(acl_resource)
 def index_page(db_alias: str):
     """A page that visiualizes the schemas of a database"""
     if db_alias not in config.databases():
@@ -49,8 +48,7 @@ def index_page(db_alias: str):
     )
 
 
-@blueprint.route('/<string:db_alias>/schemas-')
-@acl.require_permission(acl_resource)
+@blueprint.route('/<string:db_alias>/.schemas')
 def schema_selection(db_alias: str):
     """Asynchronously computes the list of schemas with foreign key constraints"""
     schemas_with_fk_constraints = []
@@ -87,7 +85,7 @@ var schemaPage = SchemaPage("''' + flask.url_for('mara_db.index_page', db_alias=
 
 
 @blueprint.route('/<string:db_alias>/<path:schemas>')
-@acl.require_permission(acl_resource)
+@acl.require_permission(acl_resource, do_abort=False)
 def draw_schema(db_alias: str, schemas: str):
     """Shows a chart of the tables and FK relationships in a given database and schema list"""
 
