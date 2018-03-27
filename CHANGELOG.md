@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.2.2
+*2018-03-27*
+
+- Fix bug in schema drawing
+
+
 ## 2.2.1
 *2018-03-19*
 

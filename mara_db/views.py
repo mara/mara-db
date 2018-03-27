@@ -5,10 +5,10 @@ import re
 
 import flask
 import graphviz
+
 import mara_db.sqlalchemy
 from mara_db import config, dbs
 from mara_page import acl, navigation, response, bootstrap, html, _, xml
-
 
 blueprint = flask.Blueprint('mara_db', __name__, static_folder='static', template_folder='templates', url_prefix='/db')
 
@@ -182,7 +182,9 @@ GROUP BY table_schema, table_name''')
             label += '<TD ALIGN="LEFT"><U><B> ' + table_name + ' </B></U></TD></TR>'
             for column in table_columns[(schema_name, table_name)]:
                 label += '<TR><TD ALIGN="LEFT" > '
-                if fk_pattern.match(column) and column not in constrained_columns[(schema_name, table_name)]:
+                if fk_pattern.match(column) \
+                        and (schema_name, table_name) in constrained_columns \
+                        and column not in constrained_columns[(schema_name, table_name)]:
                     label += '<B><I><FONT COLOR="#dd55dd"> ' + column + ' </FONT></I></B>'
                 else:
                     label += column
