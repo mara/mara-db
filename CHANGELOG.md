@@ -1,14 +1,12 @@
 # Changelog
 
-## 2.2.3
+
+## 2.2.2 - 2.2.4
 *2018-03-28*
 
-- Quote strings when copying from sqlite 
-
-## 2.2.2
-*2018-03-27*
-
 - Fix bug in schema drawing
+- Quote strings when copying from sqlite 
+- NULL value handling when copying from sqlite 
 
 
 ## 2.2.1
