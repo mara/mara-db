@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.2.3
+*2018-03-28*
+
+- Quote strings when copying from sqlite 
+
 ## 2.2.2
 *2018-03-27*
 
