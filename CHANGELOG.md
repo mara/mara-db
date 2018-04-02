@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.3.0 
+*2018-04-03*
+
+- Switch dependency links in setup.py from ssh to https
+
 
 ## 2.2.2 - 2.2.4
 *2018-03-28*
