@@ -1,9 +1,11 @@
 # Changelog
 
-## 2.3.0 
+
+## 2.3.0 - 2.3.1 
 *2018-04-03*
 
 - Switch dependency links in setup.py from ssh to https
+- Add psycopg2 as dependency
 
 
 ## 2.2.2 - 2.2.4
