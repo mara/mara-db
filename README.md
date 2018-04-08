@@ -21,7 +21,22 @@ print(mara_db.dbs.db('mara'))
 # -> <PostgreSQLDB: host=localhost, database=mara>
 ```
 
-## Generating shell commands for accessing databases
+&nbsp;
+
+
+## Visualization of (PostgreSQL) database schemas 
+
+[mara_db/views.py](mara_db/views.py) contains a schema visualization for all configured databases using graphviz (currently PostgreSQL only). It basically show tables of selected schemas together with the foreign key relations between them. 
+
+
+![Schema visualization](docs/schema-visualization.png)
+
+For finding missing foreign key constraints, columns that follow a specific naming pattern (configurable via `config.schema_ui_foreign_key_column_regex`, default `*_fk`) and that are not part of foreign key constraints are drawn in pink.    
+
+&nbsp;
+
+
+## Fast batch processing: Accessing databases with shell commands
 
 The file [mara_db/shell.py](mara_db/shell.py) contains functions that create commands for accessing databases via their command line clients. 
    
@@ -62,21 +77,61 @@ print(mara_db.shell.copy_command('source-2', 'dwh', target_table='some_table'))
 #         --command = "COPY some_table FROM STDIN WITH CSV HEADER"
 ```
 
+&nbsp;
 
-## Accessing databases with SQLAlchemy
 
-The configured database connections can be used in SQLAlchemy via the functions defined in [mara_db/sqlalchemy.py](mara_db/sqlalchemy.py):
+
+## Make it so! Auto-migration of SQLAlchemy models
+
+[Alembic has a feature](http://alembic.zzzcomputing.com/en/latest/autogenerate.html) that can create a diff between the state of a database and the ORM models of an application. This feature is used in [mara_db/auto_migrate.py](mara_db/auto_migrate.py) to automatically perform all necessary database transformations, without intermediate migration files:
 
 ```python
-import mara_db.sqlalchemy
+# define a model / table
+class MyTable(sqlalchemy.ext.declarative.declarative_base()):
+    __tablename__ = 'my_table'
+    my_table_id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)
+    column_1 = sqlalchemy.Column(sqlalchemy.TEXT, nullable=False, index=True)
 
-## create an sqlalchemy engine for a database configuration
-print(mara_db.sqlalchemy.engine('mara'))
-# -> Engine(postgresql+psycopg2://root@localhost/mara)
+
+db = mara_db.dbs.SQLiteDB(file_name='/tmp/test.sqlite')
+
+# create database and table 
+mara_db.auto_migration.auto_migrate(engine=mara_db.auto_migration.engine(db), models=[MyTable])
+# ->
+# Created database "sqlite:////tmp/test.sqlite"
+#
+# CREATE TABLE my_table (
+#     my_table_id SERIAL NOT NULL,
+#     column_1 TEXT NOT NULL,
+#     PRIMARY KEY (my_table_id)
+# );
+#
+# CREATE INDEX ix_my_table_column_1 ON my_table (column_1);
+```
+
+When the model is changed later, then `auto_migrate` creates a diff against the existing database and applies it:
+
+```python    
+# remove index and add another column
+class MyTable(sqlalchemy.ext.declarative.declarative_base()):
+    __tablename__ = 'my_table'
+    my_table_id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)
+    column_1 = sqlalchemy.Column(sqlalchemy.TEXT, nullable=False)
+    column_2 = sqlalchemy.Column(sqlalchemy.Integer)
+
+auto_migrate(engine=engine(db), models=[MyTable])
+# ->
+# ALTER TABLE my_table ADD COLUMN column_2 INTEGER;
+#
+# DROP INDEX ix_my_table_text_column_1;
+```
+
+**Use with care**! The are lot of changes [that alembic auto-generate can not detect](http://alembic.zzzcomputing.com/en/latest/autogenerate.html#what-does-autogenerate-detect-and-what-does-it-not-detect). We recommend testing each aut-migration on a staging system first before deploying to production. Sometimes manual migration scripts will be necessary.
+ 
 
 
-## creates a context that automatically commits or rollbacks an alchemy session
-with mara_db.sqlalchemy.session_context(mara_db.dbs.PostgreSQLDB(host='localhost', user='root', database='kfz_dwh_mara')) as session:
-    print(session.execute("SELECT 1").scalar())
-# -> 1
+## Installation
+
+```bash
+pip install --process-dependency-links git+https://github.com/mara/mara-db.git
 ```
