@@ -6,7 +6,7 @@ import re
 import flask
 import graphviz
 
-import mara_db.sqlalchemy
+import mara_db.postgresql
 from mara_db import config, dbs
 from mara_page import acl, navigation, response, bootstrap, html, _, xml
 
@@ -17,8 +17,7 @@ acl_resource = acl.AclResource(name='DB Schema')
 
 def navigation_entry():
     return navigation.NavigationEntry(
-        label='DB Schema', uri_fn=lambda: flask.url_for('mara_db.index_page', db_alias=config.mara_db_alias()),
-        icon='star', description='Data base schemas',
+        label='DB Schema', icon='star', description='Data base schemas',
         children=[
             navigation.NavigationEntry(
                 label=alias, icon='database',
@@ -52,7 +51,7 @@ def index_page(db_alias: str):
 def schema_selection(db_alias: str):
     """Asynchronously computes the list of schemas with foreign key constraints"""
     schemas_with_fk_constraints = []
-    with mara_db.sqlalchemy.postgres_cursor_context(db_alias) as cursor:
+    with mara_db.postgresql.postgres_cursor_context(db_alias) as cursor:
         cursor.execute('''
 SELECT
   array_cat(array_agg(DISTINCT constrained_table_schema.nspname), array_agg(DISTINCT referenced_table_schema.nspname))
@@ -100,7 +99,7 @@ def draw_schema(db_alias: str, schemas: str):
 
     # get all table inheritance relations as dictionary: {(child_schema, child_table): (parent_schema, parent_table)
     inherited_tables = {}
-    with mara_db.sqlalchemy.postgres_cursor_context(db_alias) as cursor:
+    with mara_db.postgresql.postgres_cursor_context(db_alias) as cursor:
         cursor.execute("""
 SELECT
   rel_namespace.nspname, rel.relname ,
@@ -118,7 +117,7 @@ FROM pg_inherits
     constrained_columns = {}  # {(schema_name, table_name): {columns}}
     tables = set()
 
-    with mara_db.sqlalchemy.postgres_cursor_context(db_alias) as cursor:
+    with mara_db.postgresql.postgres_cursor_context(db_alias) as cursor:
         cursor.execute(f'''
 SELECT
   constrained_table_schema.nspname,
@@ -152,7 +151,7 @@ GROUP BY constrained_table_schema.nspname, constrained_table.relname, referenced
 
     # get all columns of all tables
     table_columns = {}  # {(schema_name, table_name): [columns]}
-    with mara_db.sqlalchemy.postgres_cursor_context(db_alias) as cursor:
+    with mara_db.postgresql.postgres_cursor_context(db_alias) as cursor:
         cursor.execute('''
 SELECT
   table_schema, table_name,
