@@ -4,7 +4,6 @@ import datetime
 import re
 
 import flask
-import graphviz
 
 import mara_db.postgresql
 from mara_db import config, dbs
@@ -87,6 +86,7 @@ var schemaPage = SchemaPage("''' + flask.url_for('mara_db.index_page', db_alias=
 @acl.require_permission(acl_resource, do_abort=False)
 def draw_schema(db_alias: str, schemas: str):
     """Shows a chart of the tables and FK relationships in a given database and schema list"""
+    import graphviz
 
     if db_alias not in config.databases():
         flask.abort(404, f'unkown database {db_alias}')
