@@ -8,6 +8,8 @@ setup(
 
     install_requires=[
         'SQLAlchemy>=1.1.5',
+        'sqlalchemy-utils>=0.32.14',
+        'alembic>=0.8.10',
         'multimethod>=0.7.1',
         'graphviz>=0.8',
         'mara-page>=1.3.0',
