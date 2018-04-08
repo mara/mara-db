@@ -8,11 +8,6 @@ def databases() -> {str: dbs.DB}:
     return {'mara': dbs.PostgreSQLDB(host='localhost', database='mara', user='root')}
 
 
-def mara_db_alias() -> str:
-    """The database alias for mara internal data"""
-    return 'mara'
-
-
 def default_timezone() -> str:
     """
     The default timezone to be used for database connections
