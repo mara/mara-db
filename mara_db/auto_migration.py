@@ -151,7 +151,7 @@ def __(db, **_):
 @engine.register(mara_db.dbs.PostgreSQLDB)
 def __(db: mara_db.dbs.PostgreSQLDB):
     return sqlalchemy.create_engine(
-        f'postgresql+psycopg2://{db.user}{":"+db.password if db.password else ""}@{db.host}/{db.database}')
+        f'postgresql+psycopg2://{db.user}{":"+db.password if db.password else ""}@{db.host}":"{db.port}/{db.database}')
 
 
 @engine.register(mara_db.dbs.SQLiteDB)
