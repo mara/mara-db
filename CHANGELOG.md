@@ -1,6 +1,6 @@
 # Changelog
 
-## 3.0.0 (2018-04-09)
+## 3.0.0 - 3.0.1 (2018-04-09)
 
 - Move sqlalchemy auto-migration from mara-app to mara-db
 - Remove `config.mara_db_alias` function
@@ -8,6 +8,7 @@
 - Remove `sqlalchemy/session_context` context handler
 - Import graphviz only when needed
 - Update / improve documentation
+- Add port to sqlalchemy postgres connection string
 
 **required changes**
 
