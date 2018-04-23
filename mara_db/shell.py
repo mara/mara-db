@@ -94,12 +94,13 @@ def __(db: dbs.SQLiteDB, timezone: str = None, echo_queries: bool = True):
 
 
 @singledispatch
-def copy_to_stdout_command(db: object) -> str:
+def copy_to_stdout_command(db: object, header: bool = False) -> str:
     """
     Creates a shell command that receives a query from stdin, executes it and writes the output to stdout
 
     Args:
         db: The database in which to run the query (either an alias or a `dbs.DB` object
+        header: Whether a csv header with the column name(s) will be included or not. No header, by default. (not implemented in sqsh for SQLServerDB)
 
     Returns:
         The composed shell command
@@ -113,30 +114,33 @@ def copy_to_stdout_command(db: object) -> str:
 
 
 @copy_to_stdout_command.register(str)
-def __(alias: str):
-    return copy_to_stdout_command(dbs.db(alias))
+def __(alias: str, header: bool = False):
+    return copy_to_stdout_command(dbs.db(alias), header=header)
 
 
 @copy_to_stdout_command.register(dbs.PostgreSQLDB)
-def __(db: dbs.PostgreSQLDB):
+def __(db: dbs.PostgreSQLDB, header: bool = False):
+    header_argument = '--tuples-only' if header == False else ''
     return query_command(db, echo_queries=False) \
-           + " --tuples-only --no-align --field-separator='\t' \\\n" \
+           + " " + header_argument + " --no-align --field-separator='\t' \\\n" \
            + "  | sed '/^$/d'"  # remove empty lines
 
 
 @copy_to_stdout_command.register(dbs.MysqlDB)
-def __(db: dbs.MysqlDB):
-    return query_command(db) + ' --skip-column-names'
+def __(db: dbs.MysqlDB, header: bool = False):
+    header_argument = '--skip-column-names' if header == False else ''
+    return query_command(db) + ' ' + header_argument
 
 
 @copy_to_stdout_command.register(dbs.SQLServerDB)
-def __(db: dbs.SQLServerDB):
+def __(db: dbs.SQLServerDB, header: bool = False):
     return query_command(db) + " -m csv"
 
 
 @copy_to_stdout_command.register(dbs.SQLiteDB)
-def __(db: dbs.SQLiteDB):
-    return query_command(db) + " -noheader -separator '\t' -quote"
+def __(db: dbs.SQLiteDB, header: bool = False):
+    header_argument = '-noheader' if header == False else ''
+    return query_command(db) + " " + header_argument + " -separator '\t' -quote"
 
 
 # -------------------------------
