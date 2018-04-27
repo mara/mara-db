@@ -1,6 +1,6 @@
 # Changelog
 
-## 3.0.0 - 3.0.1 (2018-04-09)
+## 3.0.0 - 3.0.2 (2018-04-27)
 
 - Move sqlalchemy auto-migration from mara-app to mara-db
 - Remove `config.mara_db_alias` function
@@ -9,6 +9,7 @@
 - Import graphviz only when needed
 - Update / improve documentation
 - Add port to sqlalchemy postgres connection string
+- Extend copy_to_stdout_command with "header" argument
 
 **required changes**
 
