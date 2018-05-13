@@ -44,7 +44,6 @@ def auto_migrate(engine: sqlalchemy.engine.Engine, models: [sqlalchemy.sql.schem
     except Exception as e:
         print(f'Could not access or create database "{engine.url}":\n{e}', file=sys.stderr)
         return False
-
     # merge all models into a single metadata object
     combined_meta_data = MetaData()
     for model in models:
@@ -114,7 +113,11 @@ def auto_discover_models_and_migrate() -> bool:
     models = []
     for name, module in copy.copy(sys.modules).items():
         if 'MARA_AUTOMIGRATE_SQLALCHEMY_MODELS' in dir(module):
-            for model in getattr(module, 'MARA_AUTOMIGRATE_SQLALCHEMY_MODELS'):
+            curr_models = getattr(module, 'MARA_AUTOMIGRATE_SQLALCHEMY_MODELS')
+            # can be a generator or function which returns a list
+            if callable(curr_models):
+                curr_models = curr_models()
+            for model in curr_models:
                 models.append(model)
 
     return auto_migrate(engine('mara'), models)
