@@ -13,10 +13,12 @@ setup(
         'multimethod>=0.7.1',
         'graphviz>=0.8',
         'mara-page>=1.3.0',
+        'mara-config>=0.1',
         'psycopg2-binary>=2.7.3'],
 
     dependency_links=[
         'git+https://github.com/mara/mara-page.git@1.3.0#egg=mara-page-1.3.0',
+        'git+https://github.com/mara/mara-config.git@0.1#egg=mara-config-0.1',
     ],
 
     packages=find_packages(),

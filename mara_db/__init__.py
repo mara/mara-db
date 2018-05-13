@@ -1,11 +1,23 @@
-from mara_db import config, views, cli
+def MARA_CONFIG_MODULES():
+    from mara_db import config
+    return [config]
 
-MARA_CONFIG_MODULES = [config]
 
-MARA_NAVIGATION_ENTRY_FNS = [views.navigation_entry]
+def MARA_NAVIGATION_ENTRY_FNS():
+    from mara_db import views
+    return [views.navigation_entry]
 
-MARA_ACL_RESOURCES = [views.acl_resource]
 
-MARA_FLASK_BLUEPRINTS = [views.blueprint]
+def MARA_ACL_RESOURCES():
+    from mara_db import views
+    return [views.acl_resource]
 
-MARA_CLICK_COMMANDS = [cli.migrate]
+
+def MARA_FLASK_BLUEPRINTS():
+    from mara_db import views
+    return [views.blueprint]
+
+
+def MARA_CLICK_COMMANDS():
+    from mara_db import cli
+    return [cli.migrate]
