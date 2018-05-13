@@ -12,6 +12,7 @@ from sqlalchemy import *  # unfortunately needed to get the eval part further do
 from sqlalchemy.dialects import *  # unfortunately needed to get the eval part further down working
 
 import mara_db.dbs
+import mara_config
 
 
 def auto_migrate(engine: sqlalchemy.engine.Engine, models: [sqlalchemy.sql.schema.MetaData]):
@@ -111,14 +112,8 @@ def auto_discover_models_and_migrate() -> bool:
         True when no failure happened
     """
     models = []
-    for name, module in copy.copy(sys.modules).items():
-        if 'MARA_AUTOMIGRATE_SQLALCHEMY_MODELS' in dir(module):
-            curr_models = getattr(module, 'MARA_AUTOMIGRATE_SQLALCHEMY_MODELS')
-            # can be a generator or function which returns a list
-            if callable(curr_models):
-                curr_models = curr_models()
-            for model in curr_models:
-                models.append(model)
+    for name, model in mara_config.get_contributed_functionality(f'MARA_AUTOMIGRATE_SQLALCHEMY_MODELS'):
+        models.append(model)
 
     return auto_migrate(engine('mara'), models)
 
