@@ -77,6 +77,13 @@ FROM pg_constraint
             _.label(class_='form-check-label')[
                 _.input(class_="form-check-input", id='hide-columns-checkbox', type="checkbox")[
                     ''], ' ', 'hide columns']],
+        ' &#160;&#160;',
+        _.div(class_='form-check form-check-inline')[
+            _.label(class_='form-check-label')[
+                'graphviz engine ',
+                _.select(id='engine', style='border:none;background-color:white;' )[
+                    [_.option(value=engine)[engine] for engine in ['neato', 'dot', 'twopi', 'fdp']]
+                ]]],
         _.script['''
 var schemaPage = SchemaPage("''' + flask.url_for('mara_db.index_page', db_alias=db_alias) + '''", "''' + db_alias + '''");
 ''']]))
@@ -96,6 +103,7 @@ def draw_schema(db_alias: str, schemas: str):
 
     schema_names = schemas.split('/')
     hide_columns = flask.request.args.get('hide-columns')
+    engine = flask.request.args.get('engine')
 
     # get all table inheritance relations as dictionary: {(child_schema, child_table): (parent_schema, parent_table)
     inherited_tables = {}
@@ -161,7 +169,7 @@ GROUP BY table_schema, table_name''')
         for schema_name, table_name, columns in cursor.fetchall():
             table_columns[(schema_name, table_name)] = columns
 
-    graph = graphviz.Digraph(engine='neato' if hide_columns else 'fdp',
+    graph = graphviz.Digraph(engine=engine,
                              graph_attr={'splines': 'True', 'overlap': 'ortho'})
 
     schema_colors = {}

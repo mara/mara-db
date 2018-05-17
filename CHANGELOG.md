@@ -1,5 +1,10 @@
 # Changelog
 
+## 3.1.0 (2018-05-17)
+
+- Make graphviz engine in schema visualization selectable
+
+
 ## 3.0.0 - 3.0.2 (2018-04-27)
 
 - Move sqlalchemy auto-migration from mara-app to mara-db
