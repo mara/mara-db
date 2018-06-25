@@ -34,6 +34,12 @@ class PostgreSQLDB(DB):
         self.password = password
 
 
+class RedshiftDB(PostgreSQLDB):
+    def __init__(self, host: str = None, port: int = None, database: str = None,
+                 user: str = None, password: str = None):
+        super(RedshiftDB, self).__init__(host, port, database, user, password)
+
+
 class MysqlDB(DB):
     def __init__(self, host: str = None, port: int = None, database: str = None,
                  user: str = None, password: str = None, ssl: bool = None, charset: str = None):

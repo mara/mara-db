@@ -53,6 +53,17 @@ def __(db: dbs.PostgreSQLDB, timezone: str = None, echo_queries: bool = True):
             + ' --no-psqlrc --set ON_ERROR_STOP=on '
             + (db.database or ''))
 
+@query_command.register(dbs.RedshiftDB)
+def __(db: dbs.RedshiftDB, timezone: str = None, echo_queries: bool = True):
+    return (f'PGTZ={timezone or config.default_timezone()} '
+            + (f'PGPASSWORD={db.password} ' if db.password else '')
+            + ' psql'
+            + (f' --username={db.user}' if db.user else '')
+            + (f' --host={db.host}' if db.host else '')
+            + (f' --port={db.port}' if db.port else '')
+            + (' --echo-all' if echo_queries else ' ')
+            + ' --no-psqlrc --set ON_ERROR_STOP=on '
+            + (db.database or ''))
 
 @query_command.register(dbs.MysqlDB)
 def __(db: dbs.MysqlDB, timezone: str = None, echo_queries: bool = True):
