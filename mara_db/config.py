@@ -5,8 +5,9 @@ from mara_config import declare_config
 from mara_db import dbs
 
 
+# The reference must be a string or this results in a import cycle :-(
 @declare_config()
-def databases() -> {str: dbs.DB}:
+def databases() -> {str: 'mara_db.dbs.DB'}:
     """The list of database connections to use, by alias"""
     return {'mara': dbs.PostgreSQLDB(host='localhost', database='mara', user='root')}
 
