@@ -191,6 +191,9 @@ def __(alias: str, target_table: str, csv_format: bool = False, skip_header: boo
 def __(db: dbs.PostgreSQLDB, target_table: str, csv_format: bool = False, skip_header: bool = False,
        delimiter_char: str = None, quote_char: str = None, null_value_string: str = None, timezone: str = None):
     sql = f'COPY {target_table} FROM STDIN WITH'
+    if quote_char and not csv_format:
+        print("Warning: quote_char implies csv_format=true on postgresql, setting it accordingly!")
+        csv_format = True
     if csv_format:
         sql += ' CSV'
     if skip_header:
