@@ -139,7 +139,8 @@ def __(db: dbs.SQLServerDB, header: bool = False):
 @copy_to_stdout_command.register(dbs.SQLiteDB)
 def __(db: dbs.SQLiteDB, header: bool = False):
     header_argument = '-noheader' if header == False else ''
-    return query_command(db) + " " + header_argument + " -separator '\t' -quote"
+    # order matters: csv sets comma as separator and the -separator option resets it to something else
+    return query_command(db) + " -csv " + header_argument + " -separator ';'  "
 
 
 # -------------------------------
@@ -273,4 +274,5 @@ def __(source_db: dbs.SQLServerDB, target_db: dbs.PostgreSQLDB, target_table: st
 def __(source_db: dbs.SQLiteDB, target_db: dbs.PostgreSQLDB, target_table: str, timezone: str):
     return (copy_to_stdout_command(source_db) + ' \\\n'
             + '  | ' + copy_from_stdin_command(target_db, target_table=target_table, timezone=timezone,
-                                               null_value_string='NULL', quote_char="''", csv_format=True))
+                                               delimiter_char=';',
+                                               csv_format=True))
