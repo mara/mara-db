@@ -72,8 +72,7 @@ def __(db: dbs.SQLServerDB, timezone: str = None, echo_queries: bool = True):
     command = "sed 's/\\\\\\\\$/\$/g;s/\$/\\\\\\\\$/g' | "
 
     # sqsh does not do anything when a statement is not terminated by a ';', add on to be sure
-    command += "(cat && echo ';') \\\n  | "
-    command += "(cat && echo ';\n\go') \\\n  | "
+    command += "(cat && echo ';' && echo '\go') \\\n  | "
 
     return (command + 'sqsh '
             + (f' -U {db.user}' if db.user else '')
