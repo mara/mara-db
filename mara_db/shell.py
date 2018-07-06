@@ -120,15 +120,18 @@ def __(alias: str, header: bool = False):
 @copy_to_stdout_command.register(dbs.PostgreSQLDB)
 def __(db: dbs.PostgreSQLDB, header: bool = False):
     header_argument = '--tuples-only' if header == False else ''
-    return query_command(db, echo_queries=False) \
-           + " " + header_argument + " --no-align --field-separator='\t' \\\n" \
-           + "  | sed '/^$/d'"  # remove empty lines
+    return (query_command(db, echo_queries=False)
+           + " " + header_argument + " --no-align --field-separator='\t' \\\n"
+            # remove empty lines
+            + "  | sed '/^$/d'")
 
 
 @copy_to_stdout_command.register(dbs.MysqlDB)
 def __(db: dbs.MysqlDB, header: bool = False):
     header_argument = '--skip-column-names' if header == False else ''
-    return query_command(db) + ' ' + header_argument
+    return (query_command(db) + ' ' + header_argument + ' \\\n'
+            # carriage returns break the import
+            + "  | sed 's/\\r//g' ")
 
 
 @copy_to_stdout_command.register(dbs.SQLServerDB)
