@@ -120,10 +120,10 @@ FROM pg_inherits
         for schema_name, table_name, parent_schema_name, parent_table_name in cursor.fetchall():
             inherited_tables[(schema_name, table_name)] = (parent_schema_name, parent_table_name)
 
-    # get all tables that that have foreign key constrains on them or are referenced by foreign key constraints
+    # get all tables that have foreign key constrains on them or are referenced by foreign key constraints
     fk_constraints = set()  # {((table_schema, table_name), (referred_schema_name, referred_table_name)}
     constrained_columns = {}  # {(schema_name, table_name): {columns}}
-    tables = set()
+    tables = set() # {(schema_name, table_name)}
 
     with mara_db.postgresql.postgres_cursor_context(db_alias) as cursor:
         cursor.execute(f'''
@@ -157,6 +157,32 @@ GROUP BY constrained_table_schema.nspname, constrained_table.relname, referenced
             else:
                 constrained_columns[referring_table] = set(table_columns)
 
+    # get enum usages
+    enums = set() # {(schema_name, table_name)}
+    with mara_db.postgresql.postgres_cursor_context(db_alias) as cursor:
+        cursor.execute(f'''
+SELECT
+  DISTINCT
+  pg_namespace_table.nspname AS table_schema,
+  pg_class_table.relname     AS table_name,
+
+  pg_namespace_enum.nspname  AS enum_schema,
+  pg_type.typname            AS enum_type
+FROM pg_attribute
+  JOIN pg_class pg_class_table ON pg_class_table.oid = attrelid
+  JOIN pg_namespace pg_namespace_table ON pg_namespace_table.oid = pg_class_table.relnamespace
+  JOIN pg_type ON atttypid = pg_type.OID
+  JOIN pg_namespace pg_namespace_enum ON typnamespace = pg_namespace_enum.oid
+  JOIN pg_enum ON pg_enum.enumtypid = pg_type.oid
+WHERE pg_namespace_table.nspname = ANY ({'%s'})''', (schema_names,))
+        for table_schema, table_name, enum_schema, enum_name in cursor.fetchall():
+            if (table_schema, table_name) in tables:
+                tables.add((enum_schema, enum_name))
+                fk_constraints.add(((table_schema, table_name), (enum_schema, enum_name)))
+                enums.add((enum_schema, enum_name))
+
+
+
     # get all columns of all tables
     table_columns = {}  # {(schema_name, table_name): [columns]}
     with mara_db.postgresql.postgres_cursor_context(db_alias) as cursor:
@@ -184,6 +210,8 @@ GROUP BY table_schema, table_name''')
 
         node_name = schema_name + '.' + table_name
         if hide_columns:
+            label += '<TD ALIGN="LEFT"> ' + table_name.replace('_', '<BR/>') + ' </TD></TR>'
+        elif (schema_name, table_name) in enums:
             label += '<TD ALIGN="LEFT"> ' + table_name.replace('_', '<BR/>') + ' </TD></TR>'
         else:
             label += '<TD ALIGN="LEFT"><U><B> ' + table_name + ' </B></U></TD></TR>'
