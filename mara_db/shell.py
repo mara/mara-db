@@ -53,6 +53,7 @@ def __(db: dbs.PostgreSQLDB, timezone: str = None, echo_queries: bool = True):
             + ' --no-psqlrc --set ON_ERROR_STOP=on '
             + (db.database or ''))
 
+
 @query_command.register(dbs.RedshiftDB)
 def __(db: dbs.RedshiftDB, timezone: str = None, echo_queries: bool = True):
     return (f'PGTZ={timezone or config.default_timezone()} '
@@ -64,6 +65,7 @@ def __(db: dbs.RedshiftDB, timezone: str = None, echo_queries: bool = True):
             + (' --echo-all' if echo_queries else ' ')
             + ' --no-psqlrc --set ON_ERROR_STOP=on '
             + (db.database or ''))
+
 
 @query_command.register(dbs.MysqlDB)
 def __(db: dbs.MysqlDB, timezone: str = None, echo_queries: bool = True):
@@ -105,13 +107,15 @@ def __(db: dbs.SQLiteDB, timezone: str = None, echo_queries: bool = True):
 
 
 @singledispatch
-def copy_to_stdout_command(db: object, header: bool = False) -> str:
+def copy_to_stdout_command(db: object, header: bool = False, footer: bool = False) -> str:
     """
     Creates a shell command that receives a query from stdin, executes it and writes the output to stdout
 
     Args:
         db: The database in which to run the query (either an alias or a `dbs.DB` object
-        header: Whether a csv header with the column name(s) will be included or not. No header, by default. (not implemented in sqsh for SQLServerDB)
+        header: Whether a csv header with the column name(s) will be included or not.
+            No header, by default. (not implemented in sqsh for SQLServerDB)
+        footer: Whether a footer will be included or not. False by default. (Only implemented for PostgreSQLDB)
 
     Returns:
         The composed shell command
@@ -125,31 +129,32 @@ def copy_to_stdout_command(db: object, header: bool = False) -> str:
 
 
 @copy_to_stdout_command.register(str)
-def __(alias: str, header: bool = False):
-    return copy_to_stdout_command(dbs.db(alias), header=header)
+def __(alias: str, header: bool = False, footer: bool = False):
+    return copy_to_stdout_command(dbs.db(alias), header=header, footer=footer)
 
 
 @copy_to_stdout_command.register(dbs.PostgreSQLDB)
-def __(db: dbs.PostgreSQLDB, header: bool = False):
+def __(db: dbs.PostgreSQLDB, header: bool = False, footer: bool = False):
     header_argument = '--tuples-only' if header == False else ''
+    footer_argument = '--pset="footer=off"' if footer == False else ''
     return query_command(db, echo_queries=False) \
-           + " " + header_argument + " --no-align --field-separator='\t' \\\n" \
+           + " " + header_argument + " " + footer_argument + " --no-align --field-separator='\t' \\\n" \
            + "  | sed '/^$/d'"  # remove empty lines
 
 
 @copy_to_stdout_command.register(dbs.MysqlDB)
-def __(db: dbs.MysqlDB, header: bool = False):
+def __(db: dbs.MysqlDB, header: bool = False, footer: bool = False):
     header_argument = '--skip-column-names' if header == False else ''
     return query_command(db) + ' ' + header_argument
 
 
 @copy_to_stdout_command.register(dbs.SQLServerDB)
-def __(db: dbs.SQLServerDB, header: bool = False):
+def __(db: dbs.SQLServerDB, header: bool = False, footer: bool = False):
     return query_command(db) + " -m csv"
 
 
 @copy_to_stdout_command.register(dbs.SQLiteDB)
-def __(db: dbs.SQLiteDB, header: bool = False):
+def __(db: dbs.SQLiteDB, header: bool = False, footer: bool = False):
     header_argument = '-noheader' if header == False else ''
     return query_command(db) + " " + header_argument + " -separator '\t' -quote"
 

@@ -1,10 +1,11 @@
 # Changelog
 
-## 3.1.0 - 3.1.1 (2018-05-17)
+## 3.1.0 - 3.1.2 (2018-08-30)
 
 - Make graphviz engine in schema visualization selectable
 - Implement Redshift DB
 - Show enums in schema drawing for constrained tables
+- Extend copy_to_stdout_command with "footer" argument for PostgreSQLDB
 
 
 ## 3.0.0 - 3.0.2 (2018-04-27)
