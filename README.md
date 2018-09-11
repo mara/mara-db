@@ -2,7 +2,7 @@
 
 Mini package for configuring and accessing multiple databases in a single project. Decouples the use of databases and their configuration by using "aliases" for databases.
  
-The file [mara_db/dbs.py](mara_db/dbs.py) contains abstract database configurations for PostgreSQL, Mysql, SQL Server and SQLite. The database connections of a project are configured by overwriting the `databases` function in [mara_db/config.py](mara_db/config.py):
+The file [mara_db/dbs.py](mara_db/dbs.py) contains abstract database configurations for PostgreSQL, Mysql, SQL Server, Oracle and SQLite. The database connections of a project are configured by overwriting the `databases` function in [mara_db/config.py](mara_db/config.py):
 
 ```python
 import mara_db.config
@@ -79,6 +79,18 @@ print(mara_db.shell.copy_command('source-2', 'dwh', target_table='some_table'))
 
 &nbsp;
 
+
+The following **command line clients** are used to access the various databases:
+
+| Database | Client binary | Comments |  
+| --- | --- | --- |
+| Postgresql | `psql` | Included in standard distributions. |
+| MariaDB / Mysql | `mysql` | Included in standard distributions. |
+| SQL Server | `sqsh` | From [https://sourceforge.net/projects/sqsh/](https://sourceforge.net/projects/sqsh/), usually messy to get working. On ubuntu, use [http://ppa.launchpad.net/jasc/sqsh/ubuntu/](http://ppa.launchpad.net/jasc/sqsh/ubuntu/) backport. On Mac, try the homebrew version or install from source. |
+| Oracle | `sqlplus64` | See the [Oracle Instant Client](https://www.oracle.com/technetwork/database/database-technologies/instant-client/overview/index.html) homepage for details. On Mac, follow [these instructions](https://vanwollingen.nl/install-oracle-instant-client-and-sqlplus-using-homebrew-a233ce224bf). Then ` sudo ln -s /usr/local/bin/sqlplus /usr/local/bin/sqlplus64` to make the binary accessible as `sqlplus64`. |
+| SQLite | `sqlite3` | Available in standard distributions. Version >3.20.x required (not the case on Ubuntu 14.04). |
+
+&nbsp;
 
 
 ## Make it so! Auto-migration of SQLAlchemy models
