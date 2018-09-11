@@ -84,7 +84,7 @@ def __(db: dbs.SQLServerDB, timezone: str = None, echo_queries: bool = True):
     # first, undo the quoting in case it has already been applied, then quote
     command = "sed 's/\\\\\\\\$/\$/g;s/\$/\\\\\\\\$/g' | "
 
-    # sqsh does not do anything when a statement is not terminated by a ';', add on to be sure
+    # sqsh does not do anything when a statement is not terminated by a ';', add one to be sure
     command += "(cat && echo ';') \\\n  | "
     command += "(cat && echo ';\n\go') \\\n  | "
 
@@ -93,6 +93,15 @@ def __(db: dbs.SQLServerDB, timezone: str = None, echo_queries: bool = True):
             + (f' -P {db.password}' if db.password else '')
             + (f' -S {db.host}' if db.host else '')
             + (f' -D {db.database}' if db.database else ''))
+
+
+@query_command.register(dbs.OracleDB)
+def __(db: dbs.OracleDB, timezone: str = None, echo_queries: bool = True):
+    # sqlplus does not do anything when a statement is not terminated by a ';', add one to be sure
+    command = "(cat && echo ';') \\\n  | "
+
+    return (command + 'sqlplus64 -s '
+            + f'{db.user}/{db.password}@{db.host}:{db.port or 1521}/{db.endpoint}')
 
 
 @query_command.register(dbs.SQLiteDB)
@@ -151,6 +160,11 @@ def __(db: dbs.MysqlDB, header: bool = False, footer: bool = False):
 @copy_to_stdout_command.register(dbs.SQLServerDB)
 def __(db: dbs.SQLServerDB, header: bool = False, footer: bool = False):
     return query_command(db) + " -m csv"
+
+
+@copy_to_stdout_command.register(dbs.OracleDB)
+def __(db: dbs.OracleDB, header: bool = False):
+    return query_command(db)
 
 
 @copy_to_stdout_command.register(dbs.SQLiteDB)
@@ -281,6 +295,13 @@ def __(source_db: dbs.SQLServerDB, target_db: dbs.PostgreSQLDB, target_table: st
     return (copy_to_stdout_command(source_db) + ' \\\n'
             + '  | ' + copy_from_stdin_command(target_db, target_table=target_table, csv_format=True,
                                                skip_header=True, timezone=timezone))
+
+
+@copy_command.register(dbs.OracleDB, dbs.PostgreSQLDB)
+def __(source_db: dbs.OracleDB, target_db: dbs.PostgreSQLDB, target_table: str, timezone: str):
+    return (copy_to_stdout_command(source_db) + ' \\\n'
+            + '  | ' + copy_from_stdin_command(target_db, target_table=target_table, csv_format=True, skip_header=False,
+                                               null_value_string='NULL', timezone=timezone))
 
 
 @copy_command.register(dbs.SQLiteDB, dbs.PostgreSQLDB)

@@ -17,6 +17,7 @@ def db(alias):
 
 class DB:
     """Generic database connection definition"""
+
     def __repr__(self) -> str:
         return (f'<{self.__class__.__name__}: '
                 + ', '.join([f'{var}={"*****" if var =="password" else getattr(self,var)}'
@@ -56,6 +57,15 @@ class SQLServerDB(DB):
     def __init__(self, host: str = None, database: str = None, user: str = None, password: str = None):
         self.host = host
         self.database = database
+        self.user = user
+        self.password = password
+
+
+class OracleDB(DB):
+    def __init__(self, host: str = None, port: int = 0, endpoint: str = None, user: str = None, password: str = None):
+        self.host = host
+        self.port = port
+        self.endpoint = endpoint
         self.user = user
         self.password = password
 
