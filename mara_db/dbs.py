@@ -27,12 +27,17 @@ class DB:
 
 class PostgreSQLDB(DB):
     def __init__(self, host: str = None, port: int = None, database: str = None,
-                 user: str = None, password: str = None):
+                 user: str = None, password: str = None,
+                 sslmode: str = None, sslrootcert: str = None, sslcert: str = None, sslkey: str = None):
         self.host = host
         self.database = database
         self.port = port
         self.user = user
         self.password = password
+        self.sslmode = sslmode
+        self.sslrootcert = sslrootcert
+        self.sslcert = sslcert
+        self.sslkey = sslkey
 
 
 class RedshiftDB(PostgreSQLDB):

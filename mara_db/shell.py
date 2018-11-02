@@ -47,6 +47,10 @@ def __(alias: str, timezone: str = None, echo_queries: bool = True):
 def __(db: dbs.PostgreSQLDB, timezone: str = None, echo_queries: bool = True):
     return (f'PGTZ={timezone or config.default_timezone()} '
             + (f'PGPASSWORD={db.password} ' if db.password else '')
+            + (f'PGSSLMODE={db.sslmode} ' if db.sslmode else '')
+            + (f'PGSSLROOTCERT={db.sslrootcert} ' if db.sslrootcert else '')
+            + (f'PGSSLCERT={db.sslcert} ' if db.sslcert else '')
+            + (f'PGSSLKEY={db.sslkey} ' if db.sslkey else '')
             + 'PGOPTIONS=--client-min-messages=warning psql'
             + (f' --username={db.user}' if db.user else '')
             + (f' --host={db.host}' if db.host else '')
