@@ -104,8 +104,6 @@ def __(db: dbs.SQLServerDB, timezone: str = None, echo_queries: bool = True):
 @query_command.register(dbs.OracleDB)
 def __(db: dbs.OracleDB, timezone: str = None, echo_queries: bool = True):
     # sqlplus does not do anything when a statement is not terminated by a ';', add one to be sure
-    command = "(cat && echo ';') \\\n  | "
-
     return (# Oracle needs a semicolon at the end, with no newlines before
         # Remove all trailing whitespace and then add a semicolon if not there yet
             shlex.quote(sys.executable)
