@@ -171,7 +171,7 @@ def __(db: dbs.SQLServerDB, header: bool = False, footer: bool = False):
 
 
 @copy_to_stdout_command.register(dbs.OracleDB)
-def __(db: dbs.OracleDB, header: bool = False):
+def __(db: dbs.OracleDB, header: bool = False, footer: bool = False):
     return "(echo 'set markup csv on\nset feedback off\nset heading off' && cat)" \
             +  " \\\n  | " + query_command(db)
 
