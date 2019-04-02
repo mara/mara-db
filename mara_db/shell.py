@@ -94,7 +94,7 @@ def __(db: dbs.SQLServerDB, timezone: str = None, echo_queries: bool = True):
     command += "(cat && echo ';') \\\n  | "
     command += "(cat && echo ';\n\go') \\\n  | "
 
-    return (command + 'sqsh '
+    return (command + 'sqsh -a 1 -d 0 -f 0'
             + (f' -U {db.user}' if db.user else '')
             + (f' -P {db.password}' if db.password else '')
             + (f' -S {db.host}' if db.host else '')
