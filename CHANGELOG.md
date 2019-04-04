@@ -1,10 +1,11 @@
 # Changelog
 
-## 3.2.0 - 3.2.1 (2018-09-11)
+## 3.2.0 - 3.2.2 (2019-04-04)
 
 - Add oracle db access
-- added SSL standard parameters to PostgreSQL connection string
-
+- Add SSL standard parameters to PostgreSQL connection string
+- Add missing footer parameter to Oracle copy to stdout command
+- Change arguments for sqsh client to return non zero exitcode in error case      
 
 ## 3.1.0 - 3.1.2 (2018-08-30)
 
