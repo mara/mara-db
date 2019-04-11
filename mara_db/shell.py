@@ -155,7 +155,7 @@ def __(db: dbs.PostgreSQLDB, header: bool = False, footer: bool = False):
     header_argument = '--tuples-only' if header == False else ''
     footer_argument = '--pset="footer=off"' if footer == False else ''
     return query_command(db, echo_queries=False) \
-           + " " + header_argument + " " + footer_argument + " --no-align --field-separator='\t' \\\n" \
+           + " " + header_argument + " " + footer_argument + f" --no-align --field-separator='{chr(31)}' \\\n" \
            + "  | sed '/^$/d'"  # remove empty lines
 
 
@@ -288,8 +288,9 @@ def __(source_db: dbs.DB, target_db_alias: str, target_table: str, timezone: str
 @copy_command.register(dbs.PostgreSQLDB, dbs.PostgreSQLDB)
 def __(source_db: dbs.PostgreSQLDB, target_db: dbs.PostgreSQLDB, target_table: str, timezone: str):
     return (copy_to_stdout_command(source_db) + ' \\\n'
+            + "  | sed 's#\\\\#\\\\\\\\#g'"
             + '  | ' + copy_from_stdin_command(target_db, target_table=target_table,
-                                               null_value_string='', timezone=timezone))
+                                               null_value_string='', timezone=timezone,  delimiter_char=chr(31)))
 
 
 @copy_command.register(dbs.MysqlDB, dbs.PostgreSQLDB)
