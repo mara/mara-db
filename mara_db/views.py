@@ -111,7 +111,7 @@ def draw_schema(db_alias: str, schemas: str):
         cursor.execute("""
 SELECT
   rel_namespace.nspname, rel.relname ,
-  parent_namespace.nspname, parent.relname 
+  parent_namespace.nspname, parent.relname
 FROM pg_inherits
   JOIN pg_class parent ON parent.oid = pg_inherits.inhparent
   JOIN pg_class rel ON rel.oid = pg_inherits.inhrelid
