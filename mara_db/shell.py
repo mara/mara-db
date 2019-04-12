@@ -104,7 +104,7 @@ def __(db: dbs.SQLServerDB, timezone: str = None, echo_queries: bool = True):
 @query_command.register(dbs.OracleDB)
 def __(db: dbs.OracleDB, timezone: str = None, echo_queries: bool = True):
     # sqlplus does not do anything when a statement is not terminated by a ';', add one to be sure
-    return (# Oracle needs a semicolon at the end, with no newlines before
+    return (  # Oracle needs a semicolon at the end, with no newlines before
         # Remove all trailing whitespace and then add a semicolon if not there yet
             shlex.quote(sys.executable)
             + ''' -c "import sys; sql = sys.stdin.read().strip(); sql = sql + ';' if not sql[-1]==';' else sql; print(sql)" '''
@@ -173,7 +173,7 @@ def __(db: dbs.SQLServerDB, header: bool = False, footer: bool = False):
 @copy_to_stdout_command.register(dbs.OracleDB)
 def __(db: dbs.OracleDB, header: bool = False, footer: bool = False):
     return "(echo 'set markup csv on\nset feedback off\nset heading off' && cat)" \
-            +  " \\\n  | " + query_command(db)
+           + " \\\n  | " + query_command(db)
 
 
 @copy_to_stdout_command.register(dbs.SQLiteDB)

@@ -81,7 +81,7 @@ FROM pg_constraint
         _.div(class_='form-check form-check-inline')[
             _.label(class_='form-check-label')[
                 'graphviz engine ',
-                _.select(id='engine', style='border:none;background-color:white;' )[
+                _.select(id='engine', style='border:none;background-color:white;')[
                     [_.option(value=engine)[engine] for engine in ['neato', 'dot', 'twopi', 'fdp']]
                 ]]],
         _.script['''
@@ -123,7 +123,7 @@ FROM pg_inherits
     # get all tables that have foreign key constrains on them or are referenced by foreign key constraints
     fk_constraints = set()  # {((table_schema, table_name), (referred_schema_name, referred_table_name)}
     constrained_columns = {}  # {(schema_name, table_name): {columns}}
-    tables = set() # {(schema_name, table_name)}
+    tables = set()  # {(schema_name, table_name)}
 
     with mara_db.postgresql.postgres_cursor_context(db_alias) as cursor:
         cursor.execute(f'''
@@ -158,7 +158,7 @@ GROUP BY constrained_table_schema.nspname, constrained_table.relname, referenced
                 constrained_columns[referring_table] = set(table_columns)
 
     # get enum usages
-    enums = set() # {(schema_name, table_name)}
+    enums = set()  # {(schema_name, table_name)}
     with mara_db.postgresql.postgres_cursor_context(db_alias) as cursor:
         cursor.execute(f'''
 SELECT
@@ -180,8 +180,6 @@ WHERE pg_namespace_table.nspname = ANY ({'%s'})''', (schema_names,))
                 tables.add((enum_schema, enum_name))
                 fk_constraints.add(((table_schema, table_name), (enum_schema, enum_name)))
                 enums.add((enum_schema, enum_name))
-
-
 
     # get all columns of all tables
     table_columns = {}  # {(schema_name, table_name): [columns]}

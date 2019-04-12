@@ -20,7 +20,7 @@ class DB:
 
     def __repr__(self) -> str:
         return (f'<{self.__class__.__name__}: '
-                + ', '.join([f'{var}={"*****" if var =="password" else getattr(self,var)}'
+                + ', '.join([f'{var}={"*****" if var == "password" else getattr(self, var)}'
                              for var in vars(self) if getattr(self, var)])
                 + '>')
 

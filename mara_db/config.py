@@ -1,6 +1,7 @@
 """Configuration of database connections"""
-from mara_db import dbs
 import typing
+
+from mara_db import dbs
 
 
 def databases() -> {str: dbs.DB}:
