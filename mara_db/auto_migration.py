@@ -3,6 +3,7 @@
 import copy
 import io
 import sys
+import typing
 
 import sqlalchemy.engine
 import sqlalchemy.sql.schema
@@ -114,9 +115,13 @@ def auto_discover_models_and_migrate() -> bool:
     models = []
     for name, module in copy.copy(sys.modules).items():
         if 'MARA_AUTOMIGRATE_SQLALCHEMY_MODELS' in dir(module):
-            for model in getattr(module, 'MARA_AUTOMIGRATE_SQLALCHEMY_MODELS'):
-                models.append(model)
-
+            module_models = getattr(module, 'MARA_AUTOMIGRATE_SQLALCHEMY_MODELS')
+            if isinstance(module_models, typing.Callable):
+                module_models = module_models()
+            if isinstance(models, typing.Dict):
+                module_models = module_models.values()
+            assert (isinstance(module_models, typing.Iterable))
+            models += module_models
     return auto_migrate(engine('mara'), models)
 
 
