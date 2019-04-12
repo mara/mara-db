@@ -16,7 +16,6 @@ setup(
         'psycopg2-binary>=2.7.3'],
 
     dependency_links=[
-        'git+https://github.com/mara/mara-page.git@1.3.0#egg=mara-page-1.3.0',
     ],
 
     packages=find_packages(),
