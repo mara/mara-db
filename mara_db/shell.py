@@ -290,7 +290,7 @@ def __(source_db: dbs.PostgreSQLDB, target_db: dbs.PostgreSQLDB, target_table: s
     return (copy_to_stdout_command(source_db) + ' \\\n'
             + "  | sed 's#\\\\#\\\\\\\\#g'"
             + '  | ' + copy_from_stdin_command(target_db, target_table=target_table,
-                                               null_value_string='', timezone=timezone,  delimiter_char=chr(31)))
+                                               null_value_string='', timezone=timezone, delimiter_char=chr(31)))
 
 
 @copy_command.register(dbs.MysqlDB, dbs.PostgreSQLDB)
