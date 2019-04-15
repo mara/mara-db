@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='mara-db',
-    version='4.0.0',
+    version='4.0.1',
 
     description='Configuration and monitoring of database connections',
 

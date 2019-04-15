@@ -1,6 +1,6 @@
 # Changelog
 
-## 4.0.0 (2019-04-12)
+## 4.0.0 - 4.0.1 (2019-04-12)
 
 - Allow MARA_AUTOMIGRATE_SQLALCHEMY_MODELS to be a function (in order to improve import speed)
 - Change MARA_XXX variables to functions to delay importing of imports

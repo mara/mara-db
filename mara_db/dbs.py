@@ -3,12 +3,11 @@
 import functools
 import pathlib
 
-from mara_db import config
-
 
 @functools.lru_cache(maxsize=None)
 def db(alias):
     """Returns a database configuration by alias"""
+    from . import config
     databases = config.databases()
     if alias not in databases:
         raise KeyError(f'database alias "{alias}" not configured')
