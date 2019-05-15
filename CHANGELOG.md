@@ -1,5 +1,10 @@
 # Changelog
 
+# 4.1.0 
+
+- Revert commit [422c332](https://github.com/mara/mara-db/commit/422c332b09b4e28e19289f0baa27f5102ade9a03) (Fix pg to pg copy command for json data). It was causing too much trouble.
+
+
 ## 4.0.0 - 4.0.1 (2019-04-12)
 
 - Allow MARA_AUTOMIGRATE_SQLALCHEMY_MODELS to be a function (in order to improve import speed)
