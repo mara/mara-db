@@ -267,6 +267,22 @@ def copy_command_delimiter_char():
     return '\t'
 
 
+def postgresql_to_postgresql_copy_command_additional_pipe_commands():
+    """Additional pipe commands in the middle of a postgresql to postgresql copy_command
+
+    Needs to start with a pipe ('|') character.
+
+    If you copy json data between postgresql databases, the following escapes all backslashes
+    which would otherwise break the import of such data:
+
+        return "  | sed 's#\\\\#\\\\\\\\#g'"
+
+    Unfortunately, it also escapes backslashes in already escaped newlines/tabs in text
+    fields, so changing the text content.
+    """
+    return ''
+
+
 @multidispatch
 def copy_command(source_db: object, target_db: object, target_table: str, timezone: str):
     """
@@ -308,7 +324,8 @@ def __(source_db: dbs.DB, target_db_alias: str, target_table: str, timezone: str
 @copy_command.register(dbs.PostgreSQLDB, dbs.PostgreSQLDB)
 def __(source_db: dbs.PostgreSQLDB, target_db: dbs.PostgreSQLDB, target_table: str, timezone: str):
     delimiter_char = copy_command_delimiter_char()
-    return (copy_to_stdout_command(source_db, delimiter_char=delimiter_char) + ' \\\n'
+    return (copy_to_stdout_command(source_db, delimiter_char=delimiter_char) + ' \\\n '
+            + postgresql_to_postgresql_copy_command_additional_pipe_commands()
             + '  | ' + copy_from_stdin_command(target_db, target_table=target_table,
                                                null_value_string='', timezone=timezone,
                                                delimiter_char=delimiter_char))
