@@ -124,7 +124,10 @@ def __(db: dbs.SQLiteDB, timezone: str = None, echo_queries: bool = True):
 
 
 @singledispatch
-def copy_to_stdout_command(db: object, header: bool = False, footer: bool = False) -> str:
+def copy_to_stdout_command(db: object,
+                           header: bool = False,
+                           footer: bool = False,
+                           delimiter_char: str = None) -> str:
     """
     Creates a shell command that receives a query from stdin, executes it and writes the output to stdout
 
@@ -133,6 +136,9 @@ def copy_to_stdout_command(db: object, header: bool = False, footer: bool = Fals
         header: Whether a csv header with the column name(s) will be included or not.
             No header, by default. (not implemented in sqsh for SQLServerDB)
         footer: Whether a footer will be included or not. False by default. (Only implemented for PostgreSQLDB)
+        delimiter_char: str to delimit the fields in one row. Default: tab character.
+                       (Only implemented for PostgreSQLDB)
+
 
     Returns:
         The composed shell command
@@ -146,39 +152,47 @@ def copy_to_stdout_command(db: object, header: bool = False, footer: bool = Fals
 
 
 @copy_to_stdout_command.register(str)
-def __(alias: str, header: bool = False, footer: bool = False):
-    return copy_to_stdout_command(dbs.db(alias), header=header, footer=footer)
+def __(alias: str, header: bool = False, footer: bool = False, delimiter_char: str = '\t'):
+    return copy_to_stdout_command(dbs.db(alias), header=header, footer=footer, delimiter_char=delimiter_char)
 
 
 @copy_to_stdout_command.register(dbs.PostgreSQLDB)
-def __(db: dbs.PostgreSQLDB, header: bool = False, footer: bool = False):
-    header_argument = '--tuples-only' if header == False else ''
-    footer_argument = '--pset="footer=off"' if footer == False else ''
+def __(db: dbs.PostgreSQLDB, header: bool = False, footer: bool = False, delimiter_char: str = '\t'):
+    header_argument = '--tuples-only' if not header else ''
+    footer_argument = '--pset="footer=off"' if not footer else ''
     return query_command(db, echo_queries=False) \
-           + " " + header_argument + " " + footer_argument + " --no-align --field-separator='\t' \\\n" \
+           + " " + header_argument + " " + footer_argument \
+           + f" --no-align --field-separator='{delimiter_char}' \\\n" \
            + "  | sed '/^$/d'"  # remove empty lines
 
 
 @copy_to_stdout_command.register(dbs.MysqlDB)
-def __(db: dbs.MysqlDB, header: bool = False, footer: bool = False):
+def __(db: dbs.MysqlDB, header: bool = False, footer: bool = None, delimiter_char: str = None):
+    assert footer is None and delimiter_char is None, "footer and delimiter_char are not used for MysqlDB"
     header_argument = '--skip-column-names' if header == False else ''
     return query_command(db) + ' ' + header_argument
 
 
 @copy_to_stdout_command.register(dbs.SQLServerDB)
-def __(db: dbs.SQLServerDB, header: bool = False, footer: bool = False):
+def __(db: dbs.SQLServerDB, header: bool = None, footer: bool = False, delimiter_char: str = None):
+    assert header is None and footer is None and delimiter_char is None, \
+        "header, footer, and delimiter_char are not used for SQLServerDB"
     return query_command(db) + " -m csv"
 
 
 @copy_to_stdout_command.register(dbs.OracleDB)
-def __(db: dbs.OracleDB, header: bool = False, footer: bool = False):
+def __(db: dbs.OracleDB, header: bool = None, footer: bool = None, delimiter_char: str = None):
+    assert header is None and footer is None and delimiter_char is None, \
+        "header, footer, and delimiter_char are not used for OracleDB"
     return "(echo 'set markup csv on\nset feedback off\nset heading off' && cat)" \
            + " \\\n  | " + query_command(db)
 
 
 @copy_to_stdout_command.register(dbs.SQLiteDB)
-def __(db: dbs.SQLiteDB, header: bool = False, footer: bool = False):
-    header_argument = '-noheader' if header == False else ''
+def __(db: dbs.SQLiteDB, header: bool = False, footer: bool = None, delimiter_char: str = None):
+    assert footer is None and delimiter_char is None, \
+        "footer and delimiter_char are not used for SQLiteDB"
+    header_argument = '-noheader' if not header else ''
     return query_command(db) + " " + header_argument + " -separator '\t' -quote"
 
 
@@ -246,6 +260,12 @@ def __(db: dbs.PostgreSQLDB, target_table: str, csv_format: bool = False, skip_h
 
 # -------------------------------
 
+def copy_command_delimiter_char():
+    """The delimiter_char used on both sides of the copy pipe
+
+    Currently only used by postgresql to postgresql copies"""
+    return '\t'
+
 
 @multidispatch
 def copy_command(source_db: object, target_db: object, target_table: str, timezone: str):
@@ -287,9 +307,11 @@ def __(source_db: dbs.DB, target_db_alias: str, target_table: str, timezone: str
 
 @copy_command.register(dbs.PostgreSQLDB, dbs.PostgreSQLDB)
 def __(source_db: dbs.PostgreSQLDB, target_db: dbs.PostgreSQLDB, target_table: str, timezone: str):
-    return (copy_to_stdout_command(source_db) + ' \\\n'
+    delimiter_char = copy_command_delimiter_char()
+    return (copy_to_stdout_command(source_db, delimiter_char=delimiter_char) + ' \\\n'
             + '  | ' + copy_from_stdin_command(target_db, target_table=target_table,
-                                               null_value_string='', timezone=timezone))
+                                               null_value_string='', timezone=timezone,
+                                               delimiter_char=delimiter_char))
 
 
 @copy_command.register(dbs.MysqlDB, dbs.PostgreSQLDB)
@@ -309,7 +331,8 @@ def __(source_db: dbs.SQLServerDB, target_db: dbs.PostgreSQLDB, target_table: st
 @copy_command.register(dbs.OracleDB, dbs.PostgreSQLDB)
 def __(source_db: dbs.OracleDB, target_db: dbs.PostgreSQLDB, target_table: str, timezone: str):
     return (copy_to_stdout_command(source_db) + ' \\\n'
-            + '  | ' + copy_from_stdin_command(target_db, target_table=target_table, csv_format=True, skip_header=False,
+            + '  | ' + copy_from_stdin_command(target_db, target_table=target_table,
+                                               csv_format=True, skip_header=False,
                                                null_value_string='NULL', timezone=timezone))
 
 
