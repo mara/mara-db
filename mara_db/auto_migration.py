@@ -41,9 +41,9 @@ def auto_migrate(engine: sqlalchemy.engine.Engine, models: [sqlalchemy.sql.schem
         # create database if it does not exist
         if not sqlalchemy_utils.database_exists(engine.url):
             sqlalchemy_utils.create_database(engine.url)
-            print(f'Created database "{engine.url}"\n')
+            print(f'Created database "{engine.url!r}"\n')
     except Exception as e:
-        print(f'Could not access or create database "{engine.url}":\n{e}', file=sys.stderr)
+        print(f'Could not access or create database "{engine.url!r}":\n{e}', file=sys.stderr)
         return False
 
     # merge all models into a single metadata object
