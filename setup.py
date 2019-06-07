@@ -10,7 +10,7 @@ setup(
         'SQLAlchemy>=1.1.5',
         'sqlalchemy-utils>=0.32.14',
         'alembic>=0.8.10',
-        'multimethod>=0.7.1',
+        'multimethod>=1.0.0',
         'graphviz>=0.8',
         'mara-page>=1.3.0',
         'psycopg2-binary>=2.7.3'],
