@@ -184,7 +184,8 @@ def __(db: dbs.PostgreSQLDB, header: bool = None, footer: bool = None,
 
     if csv_format:
         assert not (footer or header), 'unsupported when csv_format = True'
-        return f'''(echo "COPY (" && cat && echo ") TO STDOUT WITH {'CSV ' if csv_format else ''} DELIMITER '{delimiter_char}' ") \\\n''' \
+        return r" sed '/\;/q' | sed 's/\;.*//' " + '\\\n' \
+               + f'''| (echo "COPY (" && cat && echo ") TO STDOUT WITH {'CSV ' if csv_format else ''} DELIMITER '{delimiter_char}' ") \\\n''' \
                + '  | ' + query_command(db, echo_queries=False) + '\\\n' \
                + "  | sed '/^$/d'"  # remove empty lines
     else:
@@ -229,7 +230,7 @@ def __(db: dbs.SQLiteDB, header: bool = None, footer: bool = None, delimiter_cha
 
     if delimiter_char is None:
         delimiter_char = '\t'
-        
+
     assert all(v is None for v in [footer, csv_format]), "unimplemented parameter for SQLiteDB"
     header_argument = '-noheader' if not header else ''
     return query_command(db) + " " + header_argument + f" -separator '{delimiter_char}' -quote"
