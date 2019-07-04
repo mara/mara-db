@@ -1,5 +1,10 @@
 # Changelog
 
+# 4.3.0 
+
+- Add travis integration and PyPi upload
+ 
+
 # 4.2.0
 
 - Add new parameters delimiter_char and csv_format to all copy command functions (allows for better quoting JSONS, arrays, strings with tabs)

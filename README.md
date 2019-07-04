@@ -1,5 +1,10 @@
 # Mara DB
 
+[![Build Status](https://travis-ci.org/mara/mara-db.svg?branch=master)](https://travis-ci.org/mara/mara-db)
+![PyPI - License](https://img.shields.io/pypi/l/mara-db.svg)
+[![PyPI version](https://badge.fury.io/py/mara-db.svg)](https://badge.fury.io/py/mara-db)
+[![Slack Status](https://img.shields.io/badge/slack-join_chat-white.svg?logo=slack&style=social)](https://communityinviter.com/apps/mara-users/public-invite)
+
 Mini package for configuring and accessing multiple databases in a single project. Decouples the use of databases and their configuration by using "aliases" for databases.
  
 The file [mara_db/dbs.py](mara_db/dbs.py) contains abstract database configurations for PostgreSQL, Mysql, SQL Server, Oracle and SQLite. The database connections of a project are configured by overwriting the `databases` function in [mara_db/config.py](mara_db/config.py):
@@ -145,5 +150,12 @@ auto_migrate(engine=engine(db), models=[MyTable])
 ## Installation
 
 ```bash
-pip install --process-dependency-links git+https://github.com/mara/mara-db.git
+pip install mara-db
 ```
+
+or
+
+```bash
+pip install git+https://github.com/mara/mara-db.git
+```
+
