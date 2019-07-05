@@ -1,11 +1,11 @@
 # Changelog
 
-# 4.3.0 
+## 4.3.0 - 4.3.1 (2010-07-04) 
 
 - Add travis integration and PyPi upload
  
 
-# 4.2.0
+## 4.2.0
 
 - Add new parameters delimiter_char and csv_format to all copy command functions (allows for better quoting JSONS, arrays, strings with tabs)
 - Add warnings for unused parameters
@@ -17,7 +17,7 @@
 - Test whether everything still works (has been working reliably in three big projects for 4 weeks now)
 
 
-# 4.1.0 
+## 4.1.0 
 
 - Revert commit [422c332](https://github.com/mara/mara-db/commit/422c332b09b4e28e19289f0baa27f5102ade9a03) (Fix pg to pg copy command for json data). It was causing too much trouble.
 
