@@ -14,6 +14,8 @@ setup(
     long_description=get_long_description(),
     long_description_content_type='text/markdown',
 
+    url = 'https://github.com/mara/mara-db',
+
     install_requires=[
         'SQLAlchemy>=1.1.5',
         'sqlalchemy-utils>=0.32.14',
