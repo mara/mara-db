@@ -299,6 +299,33 @@ def __(db: dbs.PostgreSQLDB, target_table: str, csv_format: bool = None, skip_he
     return f'{query_command(db, timezone)} \\\n      --command="{sql}"'
 
 
+@copy_from_stdin_command.register(dbs.RedshiftDB)
+def __(db: dbs.RedshiftDB, target_table: str, csv_format: bool = None, skip_header: bool = None,
+       delimiter_char: str = None, quote_char: str = None, null_value_string: str = None, timezone: str = None):
+    import uuid
+    import datetime
+
+    tmp_file_name = f'tmp-{datetime.datetime.now().isoformat()}-{uuid.uuid4().hex}.csv'
+    s3_write_command = f'AWS_ACCESS_KEY_ID={db.aws_access_key_id} AWS_SECRET_ACCESS_KEY={db.aws_secret_access_key} aws s3 cp - s3://{db.aws_s3_bucket_name}/{tmp_file_name}'
+    s3_delete_tmp_file_command = f'AWS_ACCESS_KEY_ID={db.aws_access_key_id} AWS_SECRET_ACCESS_KEY={db.aws_secret_access_key} aws s3 rm s3://{db.aws_s3_bucket_name}/{tmp_file_name}'
+
+    sql = f"COPY {target_table} FROM 's3://{db.aws_s3_bucket_name}/{tmp_file_name}' access_key_id '{db.aws_access_key_id}' secret_access_key '{db.aws_secret_access_key}'"
+
+    if csv_format:
+        sql += ' CSV'
+    if skip_header:
+        sql += ' HEADER'
+    if delimiter_char is not None:
+        sql += f" DELIMITER AS '{delimiter_char}'"
+    if null_value_string is not None:
+        sql += f" NULL AS '{null_value_string}'"
+    if quote_char is not None:
+        sql += f" QUOTE AS '{quote_char}'"
+
+    return s3_write_command + '\n\n' \
+           + f'{query_command(db, timezone)} \\\n      --command="{sql}"\n\n' \
+           + s3_delete_tmp_file_command
+
 # -------------------------------
 
 

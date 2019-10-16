@@ -19,7 +19,7 @@ class DB:
 
     def __repr__(self) -> str:
         return (f'<{self.__class__.__name__}: '
-                + ', '.join([f'{var}={"*****" if var == "password" else getattr(self, var)}'
+                + ', '.join([f'{var}={"*****" if (var == "password" or "secret" in var) else getattr(self, var)}'
                              for var in vars(self) if getattr(self, var)])
                 + '>')
 
@@ -47,7 +47,17 @@ class PostgreSQLDB(DB):
 
 class RedshiftDB(PostgreSQLDB):
     def __init__(self, host: str = None, port: int = None, database: str = None,
-                 user: str = None, password: str = None):
+                 user: str = None, password: str = None,
+                 aws_access_key_id=None, aws_secret_access_key=None, aws_s3_bucket_name=None):
+        """
+        Connection information for a RedShift database
+
+        The aws_* parameters are for copying to Redshift from stdin via an s3 bucket
+        (requires the https://pypi.org/project/awscli/) package to be installed)
+        """
+        self.aws_access_key_id = aws_access_key_id
+        self.aws_secret_access_key = aws_secret_access_key
+        self.aws_s3_bucket_name = aws_s3_bucket_name
         super(RedshiftDB, self).__init__(host, port, database, user, password)
 
 
