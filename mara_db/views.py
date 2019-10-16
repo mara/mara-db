@@ -2,10 +2,10 @@
 
 import datetime
 import re
+import typing
+from functools import singledispatch
 
 import flask
-
-import mara_db.postgresql
 from mara_db import config, dbs
 from mara_page import acl, navigation, response, bootstrap, html, _, xml
 
@@ -23,7 +23,8 @@ def navigation_entry():
                 description=f'The schema of the {alias} db',
                 uri_fn=lambda current_db=alias: flask.url_for('mara_db.index_page', db_alias=current_db))
             for alias, db in config.databases().items()
-            if isinstance(db, mara_db.dbs.PostgreSQLDB)  # for now, only show postgres schemas
+            if (isinstance(db, dbs.PostgreSQLDB) and not isinstance(db, dbs.RedshiftDB))
+               or isinstance(db, dbs.MysqlDB)  # for now, only show postgres and mysql schemas
         ])
 
 
@@ -46,11 +47,27 @@ def index_page(db_alias: str):
     )
 
 
-@blueprint.route('/<string:db_alias>/.schemas')
-def schema_selection(db_alias: str):
-    """Asynchronously computes the list of schemas with foreign key constraints"""
-    schemas_with_fk_constraints = []
-    with mara_db.postgresql.postgres_cursor_context(db_alias) as cursor:
+@singledispatch
+def schemas_with_foreign_key_constraints(db: object) -> [str]:
+    """
+    Returns all schemas that are effected by foreign key constraints
+
+    Args:
+        db: The database in which to run the query (either an alias or a `dbs.DB` object
+    """
+    raise NotImplementedError(
+        f'Please implement schemas_with_foreign_key_constraints for type "{db.__class__.__name__}"')
+
+
+@schemas_with_foreign_key_constraints.register(str)
+def __(alias: str):
+    return schemas_with_foreign_key_constraints(dbs.db(alias))
+
+
+@schemas_with_foreign_key_constraints.register(dbs.PostgreSQLDB)
+def __(db: dbs.PostgreSQLDB):
+    import mara_db.postgresql
+    with mara_db.postgresql.postgres_cursor_context(db) as cursor:
         cursor.execute('''
 SELECT
   array_cat(array_agg(DISTINCT constrained_table_schema.nspname), array_agg(DISTINCT referenced_table_schema.nspname))
@@ -61,7 +78,29 @@ FROM pg_constraint
   JOIN pg_namespace referenced_table_schema ON referenced_table.relnamespace = referenced_table_schema.oid''')
         result = cursor.fetchone()
         if result != (None,):
-            schemas_with_fk_constraints = sorted(list(set(result[0])))
+            return list(set(result[0]))
+
+
+@schemas_with_foreign_key_constraints.register(dbs.MysqlDB)
+def __(db: dbs.MysqlDB):
+    import mara_db.mysql
+    with mara_db.mysql.mysql_cursor_context(db) as cursor:
+        cursor.execute("""
+SELECT DISTINCT table_schema
+FROM information_schema.table_constraints
+WHERE CONSTRAINT_TYPE = 'FOREIGN KEY'
+UNION
+SELECT DISTINCT REFERENCED_TABLE_SCHEMA
+FROM information_schema.key_column_usage
+WHERE REFERENCED_TABLE_SCHEMA IS NOT NULL;
+""")
+        return [row[0] for row in cursor.fetchall()]
+
+
+@blueprint.route('/<string:db_alias>/.schemas')
+def schema_selection(db_alias: str):
+    """Asynchronously computes the list of schemas with foreign key constraints"""
+    schemas_with_fk_constraints = schemas_with_foreign_key_constraints(db_alias)
 
     if len(schemas_with_fk_constraints) == 0:
         return str(_.i['No schemas with foreign key constraints found'])
@@ -89,25 +128,37 @@ var schemaPage = SchemaPage("''' + flask.url_for('mara_db.index_page', db_alias=
 ''']]))
 
 
-@blueprint.route('/<string:db_alias>/<path:schemas>')
-@acl.require_permission(acl_resource, do_abort=False)
-def draw_schema(db_alias: str, schemas: str):
-    """Shows a chart of the tables and FK relationships in a given database and schema list"""
-    import graphviz
+@singledispatch
+def extract_schema(db: object, schema_names: [str]) -> (typing.Dict, typing.Set):
+    """
+    Extracts foreign key constraints and the involved tables from a db
 
-    if db_alias not in config.databases():
-        flask.abort(404, f'unkown database {db_alias}')
+    Args:
+        db: The database in which to run the query (either an alias or a `dbs.DB` object
+        schema_names: the schemas to visualize
 
-    db = dbs.db(db_alias)
-    assert (isinstance(db, mara_db.dbs.PostgreSQLDB))  # currently only postgresql is supported
+    Returns:
+        A dictionary of tables:
+            {(table_schema, table_name): {'columns': [columns], 'constrained-columns': {constrained-columns}}
 
-    schema_names = schemas.split('/')
-    hide_columns = flask.request.args.get('hide-columns')
-    engine = flask.request.args.get('engine')
+        All foreign key constrains as a set of tuples:
+            {((table_schema, table_name), (referenced_schema_name, referenced_table_name))}
+    """
+    raise NotImplementedError(f'Please implement extract_schema for type "{db.__class__.__name__}"')
+
+
+@extract_schema.register(str)
+def __(alias: str, schema_names: [str]):
+    return extract_schema(dbs.db(alias), schema_names)
+
+
+@extract_schema.register(dbs.PostgreSQLDB)
+def __(db: dbs.PostgreSQLDB, schema_names: [str]):
+    import mara_db.postgresql
 
     # get all table inheritance relations as dictionary: {(child_schema, child_table): (parent_schema, parent_table)
     inherited_tables = {}
-    with mara_db.postgresql.postgres_cursor_context(db_alias) as cursor:
+    with mara_db.postgresql.postgres_cursor_context(db) as cursor:
         cursor.execute("""
 SELECT
   rel_namespace.nspname, rel.relname ,
@@ -121,11 +172,13 @@ FROM pg_inherits
             inherited_tables[(schema_name, table_name)] = (parent_schema_name, parent_table_name)
 
     # get all tables that have foreign key constrains on them or are referenced by foreign key constraints
-    fk_constraints = set()  # {((table_schema, table_name), (referred_schema_name, referred_table_name)}
-    constrained_columns = {}  # {(schema_name, table_name): {columns}}
-    tables = set()  # {(schema_name, table_name)}
+    tables = {}  # {(table_schema, table_name): {'columns': [columns], 'constrained-columns': {constrained-columns}}
+    foreign_key_constraints = set()  # {((table_schema, table_name), (referenced_schema_name, referenced_table_name)}
 
-    with mara_db.postgresql.postgres_cursor_context(db_alias) as cursor:
+    def empty_table():
+        return {'columns': [], 'constrained-columns': set()}
+
+    with mara_db.postgresql.postgres_cursor_context(db) as cursor:
         cursor.execute(f'''
 SELECT
   constrained_table_schema.nspname,
@@ -142,24 +195,25 @@ FROM pg_constraint
 WHERE constrained_table_schema.nspname = ANY ({'%s'})
 GROUP BY constrained_table_schema.nspname, constrained_table.relname, referenced_table_schema.nspname, referenced_table.relname;
 ''', (schema_names,))
-        for schema_name, table_name, table_columns, referred_schema_name, referred_table_name in cursor.fetchall():
+        for schema_name, table_name, table_columns, referenced_schema_name, referenced_table_name in cursor.fetchall():
             referring_table = (schema_name, table_name)
             if referring_table in inherited_tables:
                 referring_table = inherited_tables[referring_table]
-            tables.add(referring_table)
-            referred_table = (referred_schema_name, referred_table_name)
-            if referred_table in inherited_tables:
-                referred_table = inherited_tables[referred_table]
-            tables.add(referred_table)
-            fk_constraints.add((referring_table, referred_table))
-            if referring_table in constrained_columns:
-                constrained_columns[referring_table].update(table_columns)
-            else:
-                constrained_columns[referring_table] = set(table_columns)
+            if referring_table not in tables:
+                tables[referring_table] = empty_table()
+            tables[referring_table]['constrained-columns'].update(table_columns)
+
+            referenced_table = (referenced_schema_name, referenced_table_name)
+            if referenced_table in inherited_tables:
+                referenced_table = inherited_tables[referenced_table]
+
+            if referenced_table not in tables:
+                tables[referenced_table] = empty_table()
+
+            foreign_key_constraints.add((referring_table, referenced_table))
 
     # get enum usages
-    enums = set()  # {(schema_name, table_name)}
-    with mara_db.postgresql.postgres_cursor_context(db_alias) as cursor:
+    with mara_db.postgresql.postgres_cursor_context(db) as cursor:
         cursor.execute(f'''
 SELECT
   DISTINCT
@@ -177,13 +231,13 @@ FROM pg_attribute
 WHERE pg_namespace_table.nspname = ANY ({'%s'})''', (schema_names,))
         for table_schema, table_name, enum_schema, enum_name in cursor.fetchall():
             if (table_schema, table_name) in tables:
-                tables.add((enum_schema, enum_name))
-                fk_constraints.add(((table_schema, table_name), (enum_schema, enum_name)))
-                enums.add((enum_schema, enum_name))
+                if not (enum_schema, enum_name) in tables:
+                    tables[(enum_schema, enum_name)] = empty_table()
+
+                foreign_key_constraints.add(((table_schema, table_name), (enum_schema, enum_name)))
 
     # get all columns of all tables
-    table_columns = {}  # {(schema_name, table_name): [columns]}
-    with mara_db.postgresql.postgres_cursor_context(db_alias) as cursor:
+    with mara_db.postgresql.postgres_cursor_context(db) as cursor:
         cursor.execute('''
 SELECT
   table_schema, table_name,
@@ -191,8 +245,76 @@ SELECT
 FROM information_schema.columns
 GROUP BY table_schema, table_name''')
         for schema_name, table_name, columns in cursor.fetchall():
-            table_columns[(schema_name, table_name)] = columns
+            if (schema_name, table_name) in tables:
+                tables[(schema_name, table_name)]['columns'] = columns
 
+    return tables, foreign_key_constraints
+
+
+@extract_schema.register(dbs.MysqlDB)
+def __(db: dbs.MysqlDB, schema_names: [str]):
+    import mara_db.mysql
+
+    # get all tables that have foreign key constrains on them or are referenced by foreign key constraints
+    tables = {}  # {(table_schema, table_name): {'columns': [columns], 'constrained-columns': {constrained-columns}}
+    foreign_key_constraints = set()  # {((table_schema, table_name), (referenced_schema_name, referenced_table_name)}
+
+    def empty_table():
+        return {'columns': [], 'constrained-columns': set()}
+
+    with mara_db.mysql.mysql_cursor_context(db) as cursor:
+        cursor.execute(f'''
+SELECT i.table_schema,
+       i.table_name,
+       k.column_name,
+       k.referenced_table_schema,
+       k.referenced_table_name
+FROM information_schema.table_constraints i
+         LEFT JOIN information_schema.KEY_COLUMN_USAGE k
+                   ON i.constraint_name = k.constraint_name
+WHERE i.constraint_type = 'FOREIGN KEY' 
+      AND k.referenced_table_name IS NOT NULL
+      AND i.table_schema IN {'%s'}; ''', (schema_names,))
+        for table_schema, table_name, column_name, referenced_table_schema, referenced_table_name in cursor.fetchall():
+            referring_table = (table_schema, table_name)
+            referenced_table = (referenced_table_schema, referenced_table_name)
+            if not referring_table in tables:
+                tables[referring_table] = empty_table()
+            tables[referring_table]['constrained-columns'].add(column_name)
+
+            if not referenced_table in tables:
+                tables[referenced_table] = empty_table()
+
+            foreign_key_constraints.add((referring_table, referenced_table))
+
+    with mara_db.mysql.mysql_cursor_context(db) as cursor:
+        cursor.execute(f'''
+SELECT table_schema, table_name, column_name
+FROM information_schema.COLUMNS
+WHERE table_schema IN {'%s'}
+''', (schema_names,))
+        for table_schema, table_name, column_name in cursor.fetchall():
+            if (table_schema, table_name) in tables:
+                tables[(table_schema, table_name)]['columns'].append(column_name)
+
+    return tables, foreign_key_constraints
+
+
+@blueprint.route('/<string:db_alias>/<path:schemas>')
+@acl.require_permission(acl_resource, do_abort=False)
+def draw_schema(db_alias: str, schemas: str):
+    """Shows a chart of the tables and FK relationships in a given database and schema list"""
+
+    if db_alias not in config.databases():
+        flask.abort(404, f'unkown database {db_alias}')
+
+    schema_names = schemas.split('/')
+    hide_columns = flask.request.args.get('hide-columns')
+    engine = flask.request.args.get('engine')
+
+    tables, fk_constraints = extract_schema(db_alias, schema_names)
+
+    import graphviz
     graph = graphviz.Digraph(engine=engine,
                              graph_attr={'splines': 'True', 'overlap': 'ortho'})
 
@@ -209,15 +331,12 @@ GROUP BY table_schema, table_name''')
         node_name = schema_name + '.' + table_name
         if hide_columns:
             label += '<TD ALIGN="LEFT"> ' + table_name.replace('_', '<BR/>') + ' </TD></TR>'
-        elif (schema_name, table_name) in enums:
-            label += '<TD ALIGN="LEFT"> ' + table_name.replace('_', '<BR/>') + ' </TD></TR>'
         else:
             label += '<TD ALIGN="LEFT"><U><B> ' + table_name + ' </B></U></TD></TR>'
-            for column in table_columns[(schema_name, table_name)]:
+            for column in tables[(schema_name, table_name)]['columns']:
                 label += '<TR><TD ALIGN="LEFT" > '
                 if fk_pattern.match(column) \
-                        and (schema_name, table_name) in constrained_columns \
-                        and column not in constrained_columns[(schema_name, table_name)]:
+                        and column not in tables[(schema_name, table_name)]['constrained-columns']:
                     label += '<B><I><FONT COLOR="#dd55dd"> ' + column + ' </FONT></I></B>'
                 else:
                     label += column
@@ -229,8 +348,8 @@ GROUP BY table_schema, table_name''')
                    _attributes={'fontname': 'Helvetica, Arial, sans-serif', 'fontsize': '10',
                                 'fontcolor': '#555555', 'shape': 'none'})
 
-    for (schema_name, table_name), (referred_schema_name, referred_table_name) in fk_constraints:
-        graph.edge(schema_name + '.' + table_name, referred_schema_name + '.' + referred_table_name,
+    for (schema_name, table_name), (referenced_schema_name, referenced_table_name) in fk_constraints:
+        graph.edge(schema_name + '.' + table_name, referenced_schema_name + '.' + referenced_table_name,
                    _attributes={'color': '#888888'})
 
     response = flask.Response(graph.pipe('svg').decode('utf-8'))
