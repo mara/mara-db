@@ -28,11 +28,17 @@ class PostgreSQLDB(DB):
     def __init__(self, host: str = None, port: int = None, database: str = None,
                  user: str = None, password: str = None,
                  sslmode: str = None, sslrootcert: str = None, sslcert: str = None, sslkey: str = None):
+        """
+        Connection information for a PostgreSQL database
+
+        For the SSL options, see https://www.postgresql.org/docs/current/libpq-ssl.html#LIBPQ-SSL-PROTECTION
+        """
         self.host = host
         self.database = database
         self.port = port
         self.user = user
         self.password = password
+
         self.sslmode = sslmode
         self.sslrootcert = sslrootcert
         self.sslcert = sslcert
