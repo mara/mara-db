@@ -102,7 +102,7 @@ def schema_selection(db_alias: str):
     """Asynchronously computes the list of schemas with foreign key constraints"""
     schemas_with_fk_constraints = schemas_with_foreign_key_constraints(db_alias)
 
-    if len(schemas_with_fk_constraints) == 0:
+    if not schemas_with_fk_constraints or len(schemas_with_fk_constraints) == 0:
         return str(_.i['No schemas with foreign key constraints found'])
 
     return ''.join(xml.render([
