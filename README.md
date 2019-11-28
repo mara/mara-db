@@ -89,7 +89,7 @@ The following **command line clients** are used to access the various databases:
 
 | Database | Client binary | Comments |  
 | --- | --- | --- |
-| Postgresql | `psql` | Included in standard distributions. |
+| Postgresql / Redshift | `psql` | Included in standard distributions. |
 | MariaDB / Mysql | `mysql` | Included in standard distributions. |
 | SQL Server | `sqsh` | From [https://sourceforge.net/projects/sqsh/](https://sourceforge.net/projects/sqsh/), usually messy to get working. On ubuntu, use [http://ppa.launchpad.net/jasc/sqsh/ubuntu/](http://ppa.launchpad.net/jasc/sqsh/ubuntu/) backport. On Mac, try the homebrew version or install from source. |
 | Oracle | `sqlplus64` | See the [Oracle Instant Client](https://www.oracle.com/technetwork/database/database-technologies/instant-client/overview/index.html) homepage for details. On Mac, follow [these instructions](https://vanwollingen.nl/install-oracle-instant-client-and-sqlplus-using-homebrew-a233ce224bf). Then ` sudo ln -s /usr/local/bin/sqlplus /usr/local/bin/sqlplus64` to make the binary accessible as `sqlplus64`. |

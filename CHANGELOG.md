@@ -1,6 +1,15 @@
 # Changelog
 
-## 4.3.0 - 4.3.1 (2010-07-04) 
+## 4.4.0 (2019-11-28) 
+
+- Implement `copy-from-sdtin` command for Redshift (via tmp file on configuratble s3 bucket)
+- Refactor database schema visualization so that multiple databases can be implemented
+- Implement database schema visualization for MySQL
+- Add function mysql.mysql_cursor_context for connecting to MySQL databases via https://github.com/PyMySQL/mysqlclient-python
+- Allow to pass a dbs.PostgreSQLDB instance to postgresql.postgres_cursor_context
+
+
+## 4.3.0 - 4.3.1 (2019-07-04) 
 
 - Add travis integration and PyPi upload
  
