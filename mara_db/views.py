@@ -315,6 +315,8 @@ def draw_schema(db_alias: str, schemas: str):
     tables, fk_constraints = extract_schema(db_alias, schema_names)
 
     import graphviz
+    import graphviz.backend
+
     graph = graphviz.Digraph(engine=engine,
                              graph_attr={'splines': 'True', 'overlap': 'ortho'})
 
@@ -352,7 +354,12 @@ def draw_schema(db_alias: str, schemas: str):
         graph.edge(schema_name + '.' + table_name, referenced_schema_name + '.' + referenced_table_name,
                    _attributes={'color': '#888888'})
 
-    response = flask.Response(graph.pipe('svg').decode('utf-8'))
+    try:
+        svg = graph.pipe('svg').decode('utf-8')
+    except graphviz.backend.ExecutableNotFound as e:
+        return str(_.tt(style='color:red')[str(e)])
+
+    response = flask.Response(svg)
     response.headers[
         'Content-Disposition'] = f'attachment; filename="{datetime.date.today().isoformat()}-{db_alias}.svg"'
     return response
