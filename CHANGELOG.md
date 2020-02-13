@@ -1,5 +1,10 @@
 # Changelog
 
+## 4.4.1 (2020-02-13)
+
+- Show warning when graphviz is not installed
+
+
 ## 4.4.0 (2019-11-28) 
 
 - Implement `copy-from-sdtin` command for Redshift (via tmp file on configuratble s3 bucket)
