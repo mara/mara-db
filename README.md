@@ -29,9 +29,9 @@ print(mara_db.dbs.db('mara'))
 &nbsp;
 
 
-## Visualization of (PostgreSQL) database schemas 
+## Visualization of (PostgreSQL, MySQL, SQL Server) database schemas 
 
-[mara_db/views.py](mara_db/views.py) contains a schema visualization for all configured databases using graphviz (currently PostgreSQL only). It basically show tables of selected schemas together with the foreign key relations between them. 
+[mara_db/views.py](mara_db/views.py) contains a schema visualization for all configured databases using graphviz (currently PostgreSQL, Mysql and SQL Server only). It basically show tables of selected schemas together with the foreign key relations between them. 
 
 
 ![Schema visualization](docs/schema-visualization.png)
@@ -159,3 +159,11 @@ or
 pip install git+https://github.com/mara/mara-db.git
 ```
 
+### Optional: Installation of requirements for SQL Server
+
+For usage with SQL Server, the python module pyodbc and a odbc driver (e.g. Microsoft ODBC Driver 17 for SQL Server) is required which is not included in the general requirement.
+
+To see how to install pyodbc, take a look into [this install guide](https://github.com/mkleehammer/pyodbc/wiki/Install).
+To see how to install ODBC 17, take a look into [Installing the Microsoft ODBC Driver for SQL Server on Linux and macOS](https://docs.microsoft.com/en-us/sql/connect/odbc/linux-mac/installing-the-microsoft-odbc-driver-for-sql-server?view=sql-server-ver15).
+
+On Linux, you most likely will have to deal with an SSL issue, see [this issue](https://github.com/microsoft/msphpsql/issues/1023). A quick, dirty option in a test/development environment could be to [disable the requirement for TLS 1.2](https://github.com/microsoft/msphpsql/issues/1023#issuecomment-523214695).
