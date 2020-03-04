@@ -1,5 +1,11 @@
 # Changelog
 
+
+## 4.4.2 (2020-03-04)
+
+- Set default fetch-count for the `query_command` for PostgreSQLDB.
+
+
 ## 4.4.1 (2020-02-13)
 
 - Show warning when graphviz is not installed
