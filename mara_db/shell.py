@@ -60,6 +60,7 @@ def __(db: dbs.PostgreSQLDB, timezone: str = None, echo_queries: bool = None):
             + (f' --port={db.port}' if db.port else '')
             + (' --echo-all' if echo_queries else ' ')
             + ' --no-psqlrc --set ON_ERROR_STOP=on '
+            + ' --variable=FETCH_COUNT=10000 '
             + (db.database or ''))
 
 
