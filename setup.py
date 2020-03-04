@@ -7,7 +7,7 @@ def get_long_description():
 
 setup(
     name='mara-db',
-    version='4.4.2',
+    version='4.4.1',
 
     description='Configuration and monitoring of database connections',
 
