@@ -186,12 +186,12 @@ def __(db: dbs.PostgreSQLDB, header: bool = None, footer: bool = None,
         assert not (footer or header), 'unsupported when csv_format = True'
         return r" sed '/\;/q' | sed 's/\;.*//' " + '\\\n' \
                + f'''| (echo "COPY (" && cat && echo ") TO STDOUT WITH {'CSV ' if csv_format else ''} DELIMITER '{delimiter_char}' ") \\\n''' \
-               + '  | ' + query_command(db, echo_queries=False) + '\\\n' \
+               + '  | ' + query_command(db, echo_queries=False) + ' --variable=FETCH_COUNT=10000 \\\n' \
                + "  | sed '/^$/d'"  # remove empty lines
     else:
         header_argument = '--tuples-only' if not header else ''
         footer_argument = '--pset="footer=off"' if not footer else ''
-        return (query_command(db, echo_queries=False)
+        return (query_command(db, echo_queries=False) + ' --variable=FETCH_COUNT=10000'
                 + " " + header_argument + " " + footer_argument
                 + f" --no-align --field-separator='{delimiter_char}' \\\n"
                 + "  | sed '/^$/d'"  # remove empty lines

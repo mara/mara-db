@@ -1,5 +1,10 @@
 # Changelog
 
+
+## 4.4.2 (2020-03-04)
+- Set fetch-count 10000 for the `copy_to_stdout_command` for PostgreSQLDB to handle out of memory error.
+
+
 ## 4.4.1 (2020-02-13)
 
 - Show warning when graphviz is not installed
