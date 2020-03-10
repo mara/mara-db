@@ -23,10 +23,21 @@ def navigation_entry():
                 description=f'The schema of the {alias} db',
                 uri_fn=lambda current_db=alias: flask.url_for('mara_db.index_page', db_alias=current_db))
             for alias, db in config.databases().items()
-            if (isinstance(db, dbs.PostgreSQLDB) and not isinstance(db, dbs.RedshiftDB))
-               or isinstance(db, dbs.MysqlDB) or isinstance(db, dbs.SQLServerDB)  # for now, only show postgres, mysql and mssql schemas
+            if supports_extract_schema(db)
         ])
 
+def supports_extract_schema(db: object):
+    """
+    Returns true when the db supports schema extraction
+
+    Args:
+        db: The database which shall be tested for schema extraction
+    """
+    return (
+        (isinstance(db, dbs.PostgreSQLDB) and not isinstance(db, dbs.RedshiftDB))
+        or isinstance(db, dbs.MysqlDB)
+        or isinstance(db, dbs.SQLServerDB)
+    )
 
 @blueprint.route('/<string:db_alias>')
 def index_page(db_alias: str):
