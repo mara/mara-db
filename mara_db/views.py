@@ -26,18 +26,40 @@ def navigation_entry():
             if supports_extract_schema(db)
         ])
 
-def supports_extract_schema(db: object):
+
+@singledispatch
+def supports_extract_schema(db: object) -> [bool]:
     """
     Returns true when the db supports schema extraction
 
     Args:
         db: The database which shall be tested for schema extraction
     """
-    return (
-        (isinstance(db, dbs.PostgreSQLDB) and not isinstance(db, dbs.RedshiftDB))
-        or isinstance(db, dbs.MysqlDB)
-        or isinstance(db, dbs.SQLServerDB)
-    )
+    return False
+
+
+@supports_extract_schema.register(str)
+def __(alias: str):
+    return supports_extract_schema(dbs.db(alias))
+
+
+@supports_extract_schema.register(dbs.PostgreSQLDB)
+def __(db: dbs.PostgreSQLDB):
+    return not isinstance(db, dbs.RedshiftDB)
+
+
+@supports_extract_schema.register(dbs.MysqlDB)
+def __(db: dbs.MysqlDB):
+    return True
+
+
+@supports_extract_schema.register(dbs.SQLServerDB)
+def __(db: dbs.SQLServerDB):
+    # check if module pyodbc can be imported
+    import importlib
+    pyodbc_spec = importlib.util.find_spec("pyodbc")
+    return pyodbc_spec is not None
+
 
 @blueprint.route('/<string:db_alias>')
 def index_page(db_alias: str):
@@ -107,6 +129,7 @@ WHERE REFERENCED_TABLE_SCHEMA IS NOT NULL;
 """)
         return [row[0] for row in cursor.fetchall()]
 
+
 @schemas_with_foreign_key_constraints.register(dbs.SQLServerDB)
 def __(db: dbs.SQLServerDB):
     import mara_db.sqlserver
@@ -117,6 +140,7 @@ FROM sys.foreign_keys AS f
 INNER JOIN sys.foreign_key_columns AS fc ON f.object_id = fc.constraint_object_id
 """)
         return [row[0] for row in cursor.fetchall()]
+
 
 @blueprint.route('/<string:db_alias>/.schemas')
 def schema_selection(db_alias: str):
