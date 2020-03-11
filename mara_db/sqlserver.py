@@ -9,10 +9,7 @@ import mara_db.dbs
 @contextlib.contextmanager
 def sqlserver_cursor_context(db: typing.Union[str, mara_db.dbs.SQLServerDB]) -> 'pyodbc.Cursor':
     """Creates a context with a pyodbc-client cursor for a database alias or database"""
-    try:
-        import pyodbc # requires https://github.com/mkleehammer/pyodbc/wiki/Install
-    except ImportError as e:
-        pass
+    import pyodbc # requires https://github.com/mkleehammer/pyodbc/wiki/Install
 
     if isinstance(db, str):
         db = mara_db.dbs.db(db)
