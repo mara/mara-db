@@ -23,9 +23,47 @@ def navigation_entry():
                 description=f'The schema of the {alias} db',
                 uri_fn=lambda current_db=alias: flask.url_for('mara_db.index_page', db_alias=current_db))
             for alias, db in config.databases().items()
-            if (isinstance(db, dbs.PostgreSQLDB) and not isinstance(db, dbs.RedshiftDB))
-               or isinstance(db, dbs.MysqlDB)  # for now, only show postgres and mysql schemas
+            if supports_extract_schema(db)
         ])
+
+
+@singledispatch
+def supports_extract_schema(db: object) -> [bool]:
+    """
+    Returns true when the db supports schema extraction
+
+    Args:
+        db: The database which shall be tested for schema extraction
+    """
+    return False
+
+
+@supports_extract_schema.register(str)
+def __(alias: str):
+    return supports_extract_schema(dbs.db(alias))
+
+
+@supports_extract_schema.register(dbs.PostgreSQLDB)
+def __(db: dbs.PostgreSQLDB):
+    return True
+
+
+@supports_extract_schema.register(dbs.RedshiftDB)
+def __(db: dbs.RedshiftDB):
+    return False
+
+
+@supports_extract_schema.register(dbs.MysqlDB)
+def __(db: dbs.MysqlDB):
+    return True
+
+
+@supports_extract_schema.register(dbs.SQLServerDB)
+def __(db: dbs.SQLServerDB):
+    # check if module pyodbc can be imported
+    import importlib
+    pyodbc_spec = importlib.util.find_spec("pyodbc")
+    return pyodbc_spec is not None
 
 
 @blueprint.route('/<string:db_alias>')
@@ -93,6 +131,18 @@ UNION
 SELECT DISTINCT REFERENCED_TABLE_SCHEMA
 FROM information_schema.key_column_usage
 WHERE REFERENCED_TABLE_SCHEMA IS NOT NULL;
+""")
+        return [row[0] for row in cursor.fetchall()]
+
+
+@schemas_with_foreign_key_constraints.register(dbs.SQLServerDB)
+def __(db: dbs.SQLServerDB):
+    import mara_db.sqlserver
+    with mara_db.sqlserver.sqlserver_cursor_context(db) as cursor:
+        cursor.execute("""
+SELECT DISTINCT OBJECT_SCHEMA_NAME(f.parent_object_id) AS schema_name
+FROM sys.foreign_keys AS f
+INNER JOIN sys.foreign_key_columns AS fc ON f.object_id = fc.constraint_object_id
 """)
         return [row[0] for row in cursor.fetchall()]
 
@@ -297,6 +347,70 @@ WHERE table_schema IN {'%s'}
             if (table_schema, table_name) in tables:
                 tables[(table_schema, table_name)]['columns'].append(column_name)
 
+    return tables, foreign_key_constraints
+
+
+@extract_schema.register(dbs.SQLServerDB)
+def __(db: dbs.SQLServerDB, schema_names: [str]):
+    import mara_db.sqlserver
+
+    # get all tables that have foreign key constrains on them or are referenced by foreign key constraints
+    tables = {}  # {(table_schema, table_name): {'columns': [columns], 'constrained-columns': {constrained-columns}}
+    foreign_key_constraints = set()  # {((table_schema, table_name), (referenced_schema_name, referenced_table_name)}
+
+    def empty_table():
+        return {'columns': [], 'constrained-columns': set()}
+
+    with mara_db.sqlserver.sqlserver_cursor_context(db) as cursor:
+        cursor.execute(f'''
+SELECT
+	s.name AS table_schema,
+	t.name AS table_name,
+	COL_NAME(fkc.parent_object_id, fkc.parent_column_id) AS column_name,
+	fkts.name AS referenced_table_name,
+	OBJECT_NAME (fk.referenced_object_id) AS referenced_table_name
+FROM sys.tables t
+INNER JOIN sys.schemas s ON
+	s.schema_id = t.schema_id
+LEFT JOIN sys.foreign_keys fk ON
+	fk.parent_object_id = t.object_id
+LEFT JOIN sys.foreign_key_columns fkc ON
+	fkc.constraint_object_id = fk.object_id
+LEFT JOIN sys.tables fkt ON
+	fkt.object_id = fk.referenced_object_id
+LEFT JOIN sys.schemas fkts ON
+	fkts.schema_id = fkt.schema_id
+WHERE s.name IN ('%s'); ''' % '\',\''.join(schema_names))
+        for table_schema, table_name, column_name, referenced_table_schema, referenced_table_name in cursor.fetchall():
+            referring_table = (table_schema, table_name)
+            referenced_table = (referenced_table_schema, referenced_table_name)
+            if not referring_table in tables:
+                tables[referring_table] = empty_table()
+            if column_name is not None:
+                tables[referring_table]['constrained-columns'].add(column_name)
+
+            # this logic is necessary so that tables with no foreign key are not added to the schema
+            if referenced_table_schema is not None and referenced_table_name is not None:
+                if not referenced_table in tables:
+                    tables[referenced_table] = empty_table()
+                foreign_key_constraints.add((referring_table, referenced_table))
+
+    with mara_db.sqlserver.sqlserver_cursor_context(db) as cursor:
+        cursor.execute(f'''
+SELECT
+	s.name AS table_schema,
+	t.name AS table_name,
+	c.name AS column_name
+FROM sys.columns c
+INNER JOIN sys.tables t ON
+	t.object_id = c.object_id
+INNER JOIN sys.schemas s ON
+	s.schema_id = t.schema_id
+WHERE s.name IN ('%s')
+''' % '\',\''.join(schema_names))
+        for table_schema, table_name, column_name in cursor.fetchall():
+            if (table_schema, table_name) in tables:
+                tables[(table_schema, table_name)]['columns'].append(column_name)
     return tables, foreign_key_constraints
 
 
