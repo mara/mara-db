@@ -45,7 +45,12 @@ def __(alias: str):
 
 @supports_extract_schema.register(dbs.PostgreSQLDB)
 def __(db: dbs.PostgreSQLDB):
-    return not isinstance(db, dbs.RedshiftDB)
+    return True
+
+
+@supports_extract_schema.register(dbs.RedshiftDB)
+def __(db: dbs.RedshiftDB):
+    return False
 
 
 @supports_extract_schema.register(dbs.MysqlDB)
