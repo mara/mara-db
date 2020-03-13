@@ -1,13 +1,13 @@
 # Changelog
 
 
-## 4.4.2 (2020-03-04)
-- Set fetch-count 10000 for the `copy_to_stdout_command` for PostgreSQLDB to handle out of memory error.
-
-
-## 4.4.1 (2020-02-13)
+## 4.4.1 - 4.4.3 (2020-02-13)
 
 - Show warning when graphviz is not installed
+- Set fetch-count 10000 for the `copy_to_stdout_command` for PostgreSQLDB to handle out of memory error.
+- Add schema visualization support for SQL Server
+- Set mssql severity level to 10 (#25)
+ 
 
 
 ## 4.4.0 (2019-11-28) 
