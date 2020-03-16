@@ -103,11 +103,19 @@ def __(db: dbs.SQLServerDB, timezone: str = None, echo_queries: bool = None):
     command += "(cat && echo ';') \\\n  | "
     command += "(cat && echo ';\n\go') \\\n  | "
 
+    # escape database name to support characters like dashes (-) or spaces ( ) in the db name
+    dbName = db.database
+    if dbName and (dbName[0] != '[' and dbName[-1] != ']'): # don't escape when it is already escaped
+        # note: it can be questioned here if mara should support to add escaped database names in the configuration
+        if dbName[0] == '"' and dbName[-1] == '"':
+            dbName = dbName[1:-2] # remove escape with quotes; this will get messed up with the command line
+        dbName = f'[{dbName}]'
+
     return (command + 'sqsh -a 1 -d 0 -f 10'
             + (f' -U {db.user}' if db.user else '')
             + (f' -P {db.password}' if db.password else '')
             + (f' -S {db.host}' if db.host else '')
-            + (f' -D {db.database}' if db.database else ''))
+            + (f' -D {dbName}' if dbName else ''))
 
 
 @query_command.register(dbs.OracleDB)
