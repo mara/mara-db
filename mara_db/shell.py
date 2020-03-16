@@ -93,7 +93,10 @@ def __(db: dbs.MysqlDB, timezone: str = None, echo_queries: bool = None):
 
 @query_command.register(dbs.SQLServerDB)
 def __(db: dbs.SQLServerDB, timezone: str = None, echo_queries: bool = None):
-    assert all(v is None for v in [timezone, echo_queries]), "unimplemented parameter for SQLServerDB"
+    assert all(v is None for v in [timezone]), "unimplemented parameter for SQLServerDB"
+
+    if echo_queries is None:
+        echo_queries = True
 
     # sqsh is not able to use '$' directly, it has to be quoted by two backslashes
     # first, undo the quoting in case it has already been applied, then quote
@@ -107,7 +110,8 @@ def __(db: dbs.SQLServerDB, timezone: str = None, echo_queries: bool = None):
             + (f' -U {db.user}' if db.user else '')
             + (f' -P {db.password}' if db.password else '')
             + (f' -S {db.host}' if db.host else '')
-            + (f' -D {db.database}' if db.database else ''))
+            + (f' -D {db.database}' if db.database else '')
+            + (f' -e' if echo_queries else ''))
 
 
 @query_command.register(dbs.OracleDB)
