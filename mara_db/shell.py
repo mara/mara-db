@@ -95,12 +95,8 @@ def __(db: dbs.MysqlDB, timezone: str = None, echo_queries: bool = None):
 def __(db: dbs.SQLServerDB, timezone: str = None, echo_queries: bool = None):
     assert all(v is None for v in [timezone, echo_queries]), "unimplemented parameter for SQLServerDB"
 
-    # sqsh is not able to use '$' directly, it has to be quoted by two backslashes
-    # first, undo the quoting in case it has already been applied, then quote
-    command = "sed 's/\\\\\\\\$/\$/g;s/\$/\\\\\\\\$/g' | "
-
     # sqsh does not do anything when a statement is not terminated by a ';', add one to be sure
-    command += "(cat && echo ';') \\\n  | "
+    command = "(cat && echo ';') \\\n  | "
     command += "(cat && echo ';\n\go') \\\n  | "
 
     return (command + 'sqsh -a 1 -d 0 -f 10'
@@ -353,8 +349,7 @@ def copy_command(source_db: object, target_db: object, target_table: str,
     Examples:
         >>>> print(copy_command(dbs.SQLServerDB(database='source_db'), dbs.PostgreSQLDB(database='target_db'), \
                                 'target_table'))
-        sed 's/\\\\$/\$/g;s/\$/\\\\$/g' \
-          | sqsh  -D source_db -m csv \
+        sqsh  -D source_db -m csv \
           | PGTZ=Europe/Berlin PGOPTIONS=--client-min-messages=warning psql --echo-all --no-psqlrc \
                --set ON_ERROR_STOP=on target_db \
                --command="COPY target_table FROM STDIN WITH CSV HEADER"
