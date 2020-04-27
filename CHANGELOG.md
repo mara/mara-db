@@ -1,5 +1,14 @@
 # Changelog
 
+## 4.5.0 (2020-04-27)
+
+- Don't escape dollar sign in queries for SqlServer
+- Support echo sql queries for SqlServer
+
+**required changes**
+
+If use SQL Server and have queries that contain the `$` sign, then please escape that one manually.
+ 
 
 ## 4.4.1 - 4.4.3 (2020-02-13)
 
