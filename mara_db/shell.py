@@ -8,9 +8,8 @@ import shlex
 import sys
 from functools import singledispatch
 
-from multimethod import multidispatch
-
 from mara_db import dbs, config
+from multimethod import multidispatch
 
 
 @singledispatch
@@ -77,6 +76,16 @@ def __(db: dbs.RedshiftDB, timezone: str = None, echo_queries: bool = None):
             + (' --echo-all' if echo_queries else ' ')
             + ' --no-psqlrc --set ON_ERROR_STOP=on '
             + (db.database or ''))
+
+
+@query_command.register(dbs.BigQueryDB)
+def __(db: dbs.BigQueryDB, timezone: str = None, echo_queries: bool = None):
+    echo_queries = None
+    assert all(v is None for v in [timezone, echo_queries]), f"unimplemented parameter for BigQueryDB"
+
+    return ('bq query'
+            + (f' --use_legacy_sql=' + ('true' if db.use_legacy_sql else 'false'))
+            + ' --quiet --headless -n=1000000000 ')
 
 
 @query_command.register(dbs.MysqlDB)
@@ -326,12 +335,35 @@ def __(db: dbs.RedshiftDB, target_table: str, csv_format: bool = None, skip_head
            + f'{query_command(db, timezone)} \\\n      --command="{sql}"\n\n' \
            + s3_delete_tmp_file_command
 
+
+@copy_from_stdin_command.register(dbs.BigQueryDB)
+def __(db: dbs.BigQueryDB, target_table: str, csv_format: bool = None, skip_header: bool = None,
+       delimiter_char: str = None, quote_char: str = None, null_value_string: str = None, timezone: str = None):
+    sql = 'bq load'
+    if csv_format:
+        sql += ' --source_format=CSV'
+    else:
+        sql += ' --source_format=NEWLINE_DELIMITED_JSON'
+    if skip_header:
+        sql += ' --skip_leading_rows=1'  # requires already created table
+    else:
+        sql += '  --autodetect'  # schema auto-detection for CSV and JSON data
+    if delimiter_char is not None:
+        sql += f" --field_delimiter='{delimiter_char}'"
+    if null_value_string is not None:
+        sql += f" --null_marker='{null_value_string}'"
+    if quote_char is not None:
+        sql += f" --quote='{quote_char}'"
+
+    return sql + ' ' + target_table
+
+
 # -------------------------------
 
 
 @multidispatch
 def copy_command(source_db: object, target_db: object, target_table: str,
-                 timezone = None, csv_format = None, delimiter_char = None) -> str:
+                 timezone=None, csv_format=None, delimiter_char=None) -> str:
     """
     Creates a shell command that
     - receives a sql query from stdin

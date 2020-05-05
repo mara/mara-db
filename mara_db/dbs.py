@@ -61,6 +61,21 @@ class RedshiftDB(PostgreSQLDB):
         super(RedshiftDB, self).__init__(host, port, database, user, password)
 
 
+class BigQueryDB(DB):
+    def __init__(self, service_account_json: str = None, project_id: str = None, use_legacy_sql: bool = False):
+        """
+        Connection information for a BigQueryDB database
+
+
+        Enabling the BigQuery API and Service account json credentials are required. For more:
+        https://cloud.google.com/bigquery/docs/quickstarts/quickstart-client-libraries#before-you-begin
+
+        """
+        self.service_account_json = service_account_json
+        self.project_id = project_id
+        self.use_legacy_sql = use_legacy_sql
+
+
 class MysqlDB(DB):
     def __init__(self, host: str = None, port: int = None, database: str = None,
                  user: str = None, password: str = None, ssl: bool = None, charset: str = None):
