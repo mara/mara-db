@@ -83,6 +83,9 @@ def __(db: dbs.BigQueryDB, timezone: str = None, echo_queries: bool = None):
     echo_queries = None
     assert all(v is None for v in [timezone, echo_queries]), f"unimplemented parameter for BigQueryDB"
 
+    # One time activation of the service-account used is required
+    # todo: maybe as part of db initialization
+    # gcloud auth activate-service-account --key-file='path-to/service-account.json'
     return ('bq query'
             + (f' --use_legacy_sql=' + ('true' if db.use_legacy_sql else 'false'))
             + ' --quiet --headless -n=1000000000 ')
