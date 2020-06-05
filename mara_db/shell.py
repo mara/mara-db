@@ -423,6 +423,15 @@ def __(source_db: dbs.PostgreSQLDB, target_db: dbs.PostgreSQLDB, target_table: s
                                                delimiter_char=delimiter_char))
 
 
+@copy_command.register(dbs.PostgreSQLDB, dbs.BigQueryDB)
+def __(source_db: dbs.PostgreSQLDB, target_db: dbs.PostgreSQLDB, target_table: str,
+       timezone: str = None, csv_format: bool = None, delimiter_char: str = None):
+    return (copy_to_stdout_command(source_db, delimiter_char=delimiter_char, csv_format=csv_format) + ' \\\n'
+            + '  | ' + copy_from_stdin_command(target_db, target_table=target_table,
+                                               null_value_string='', timezone=timezone, csv_format=csv_format,
+                                               delimiter_char=delimiter_char))
+
+
 @copy_command.register(dbs.MysqlDB, dbs.PostgreSQLDB)
 def __(source_db: dbs.MysqlDB, target_db: dbs.PostgreSQLDB, target_table: str,
        timezone: str = None, csv_format: bool = None, delimiter_char: str = None):
