@@ -83,12 +83,17 @@ def __(db: dbs.BigQueryDB, timezone: str = None, echo_queries: bool = None):
     echo_queries = None
     assert all(v is None for v in [timezone, echo_queries]), f"unimplemented parameter for BigQueryDB"
 
-    # One time activation of the service-account used is required
-    # todo: maybe as part of db initialization
-    # gcloud auth activate-service-account --key-file='path-to/service-account.json'
     return ('bq query'
+            # global parameters
+            + ' --headless'
+            + ' --quiet'
+            + (f' --service_account_private_key_file={db.service_account_private_key_file}' if db.service_account_private_key_file else '')
+            + (f' --location={db.location}' if db.location else '')
+            + (f' --project_id={db.project}' if db.project else '')
+            + (f' --dataset_id={db.dataset}' if db.dataset else '')
+            # command parameters
             + (f' --use_legacy_sql=' + ('true' if db.use_legacy_sql else 'false'))
-            + ' --quiet --headless -n=1000000000 ')
+            + ' ')
 
 
 @query_command.register(dbs.MysqlDB)
@@ -342,23 +347,48 @@ def __(db: dbs.RedshiftDB, target_table: str, csv_format: bool = None, skip_head
 @copy_from_stdin_command.register(dbs.BigQueryDB)
 def __(db: dbs.BigQueryDB, target_table: str, csv_format: bool = None, skip_header: bool = None,
        delimiter_char: str = None, quote_char: str = None, null_value_string: str = None, timezone: str = None):
-    sql = 'bq load'
-    if csv_format:
-        sql += ' --source_format=CSV'
-    else:
-        sql += ' --source_format=NEWLINE_DELIMITED_JSON'
-    if skip_header:
-        sql += ' --skip_leading_rows=1'  # requires already created table
-    else:
-        sql += '  --autodetect'  # schema auto-detection for CSV and JSON data
-    if delimiter_char is not None:
-        sql += f" --field_delimiter='{delimiter_char}'"
-    if null_value_string is not None:
-        sql += f" --null_marker='{null_value_string}'"
-    if quote_char is not None:
-        sql += f" --quote='{quote_char}'"
+    import uuid
+    import datetime
 
-    return sql + ' ' + target_table
+    if not db.gcloud_gsc_bucked_name:
+        raise "arg 'gcloud_gsc_bucked_name' is not defined in BigQueryDB db config"
+
+    tmp_file_name = f'tmp-{datetime.datetime.now().isoformat()}-{uuid.uuid4().hex}.'+('csv' if csv_format else 'json')
+
+    # TODO: set BOTO config file having the 'gs_service_key_file' parameter, see https://cloud.google.com/storage/docs/boto-gsutil
+    gcs_write_command = f'gsutil -q cp - gs://{db.gcloud_gsc_bucked_name}/{tmp_file_name}'
+    gsc_delete_temp_file_command = f'gsutil -q rm gs://{db.gcloud_gsc_bucked_name}/{tmp_file_name}'
+
+    bq_load_command = ('bq load'
+        # global parameters
+        + ' --headless'
+        + ' --quiet'
+        + (f' --service_account_private_key_file={db.service_account_private_key_file}' if db.service_account_private_key_file else '')
+        + (f' --location={db.location}' if db.location else '')
+        + (f' --project_id={db.project}' if db.project else '')
+        + (f' --dataset_id={db.dataset}' if db.dataset else '')
+        # command parameters
+        + (f' --skip_leading_rows=1' if skip_header else '')
+        )
+
+    if csv_format:
+        bq_load_command += ' --source_format=CSV'
+    else:
+        bq_load_command += ' --source_format=NEWLINE_DELIMITED_JSON'
+
+    if delimiter_char is not None:
+        bq_load_command += f" --field_delimiter='{delimiter_char}'"
+    if null_value_string is not None:
+        bq_load_command += f" --null_marker='{null_value_string}'"
+    if quote_char is not None:
+        bq_load_command += f" --quote='{quote_char}'"
+
+    bq_load_command += f' {target_table} gs://{db.gcloud_gsc_bucked_name}/{tmp_file_name}'
+
+    return gcs_write_command + '\n\n' \
+           + bq_load_command + '\n\n' \
+           + gsc_delete_temp_file_command
+
 
 
 # -------------------------------

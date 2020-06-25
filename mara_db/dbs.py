@@ -62,17 +62,28 @@ class RedshiftDB(PostgreSQLDB):
 
 
 class BigQueryDB(DB):
-    def __init__(self, service_account_json: str = None, project_id: str = None, use_legacy_sql: bool = False):
+    def __init__(self, location: str = None, project: str = None, dataset: str = None,
+        gcloud_gsc_bucked_name=None,
+        service_account_private_key_file: str = None, use_legacy_sql: bool = False):
         """
         Connection information for a BigQueryDB database
-
 
         Enabling the BigQuery API and Service account json credentials are required. For more:
         https://cloud.google.com/bigquery/docs/quickstarts/quickstart-client-libraries#before-you-begin
 
+        Args:
+            location: Default geographic location to use when creating datasets or determining where jobs should run
+            project: Default project to use for requests.
+            dataset: Default dataset to use for requests.
+            service_account_private_key_file: The private key file provided by Google when creating a service account. (it's a JSON file).
+            gcloud_gsc_bucked_name: The Google Cloud Storage bucked used as cache for loading data
+            use_legacy_sql: (default: false) If true, use the old BigQuery SQL dialect is used.
         """
-        self.service_account_json = service_account_json
-        self.project_id = project_id
+        self.service_account_private_key_file = service_account_private_key_file
+        self.location = location
+        self.project = project
+        self.dataset = dataset
+        self.gcloud_gsc_bucked_name = gcloud_gsc_bucked_name
         self.use_legacy_sql = use_legacy_sql
 
 
