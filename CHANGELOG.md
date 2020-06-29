@@ -1,9 +1,10 @@
 # Changelog
 
-## 4.5.0 (2020-04-27)
+## 4.5.0 - 4.5.1 (2020-04-27)
 
 - Don't escape dollar sign in queries for SqlServer
 - Support echo sql queries for SqlServer
+- Bugfix copy_to_stdout_command for SqlServerDB
 
 **required changes**
 
