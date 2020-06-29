@@ -230,7 +230,7 @@ def __(db: dbs.SQLServerDB, header: bool = None, footer: bool = None, delimiter_
        csv_format: bool = None):
     assert all(
         v is None for v in [header, footer, delimiter_char, csv_format]), "unimplemented parameter for SQLServerDB"
-    return query_command(db) + " -m csv"
+    return query_command(db, echo_queries=False) + " -m csv"
 
 
 @copy_to_stdout_command.register(dbs.OracleDB)
