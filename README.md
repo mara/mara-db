@@ -168,3 +168,21 @@ To see how to install pyodbc, take a look into [this install guide](https://gith
 To see how to install ODBC 17, take a look into [Installing the Microsoft ODBC Driver for SQL Server on Linux and macOS](https://docs.microsoft.com/en-us/sql/connect/odbc/linux-mac/installing-the-microsoft-odbc-driver-for-sql-server?view=sql-server-ver15).
 
 On Linux, you most likely will have to deal with an SSL issue, see [this issue](https://github.com/microsoft/msphpsql/issues/1023). A quick, dirty option in a test/development environment could be to [disable the requirement for TLS 1.2](https://github.com/microsoft/msphpsql/issues/1023#issuecomment-523214695).
+
+### Optional: Installation of requirements for BigQuery
+
+For usage with BigQuery, the official `bq` and `gcloud` clients are required.
+See the [Google Cloud SDK](https://cloud.google.com/sdk/docs/quickstarts) page for installation details.
+
+Enabling the BigQuery API and Service account JSON credentials are also required as listed 
+in the official documentation [here](https://cloud.google.com/bigquery/docs/quickstarts/quickstart-client-libraries#before-you-begin).
+
+One time authentication of the service-account used:
+```cmd
+gcloud auth activate-service-account --key-file='path-to/service-account.json'
+```
+
+Optionally, for loading data from files into BigQuery, the `gcloud_gcs_bucket_name` can be specified in the database initialization.
+This will use the Google Cloud Storage bucket specified as cache for loading data and over-coming potential limitations.
+For more see [loading-data](https://cloud.google.com/bigquery/docs/bq-command-line-tool#loading_data). 
+By default, files will directly loaded locally as described in [loading-local-data](https://cloud.google.com/bigquery/docs/loading-data-local#loading_data_from_a_local_data_source).

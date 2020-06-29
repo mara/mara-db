@@ -347,17 +347,6 @@ def __(db: dbs.RedshiftDB, target_table: str, csv_format: bool = None, skip_head
 @copy_from_stdin_command.register(dbs.BigQueryDB)
 def __(db: dbs.BigQueryDB, target_table: str, csv_format: bool = None, skip_header: bool = None,
        delimiter_char: str = None, quote_char: str = None, null_value_string: str = None, timezone: str = None):
-    import uuid
-    import datetime
-
-    if not db.gcloud_gsc_bucked_name:
-        raise "arg 'gcloud_gsc_bucked_name' is not defined in BigQueryDB db config"
-
-    tmp_file_name = f'tmp-{datetime.datetime.now().isoformat()}-{uuid.uuid4().hex}.'+('csv' if csv_format else 'json')
-
-    # TODO: set BOTO config file having the 'gs_service_key_file' parameter, see https://cloud.google.com/storage/docs/boto-gsutil
-    gcs_write_command = f'gsutil -q cp - gs://{db.gcloud_gsc_bucked_name}/{tmp_file_name}'
-    gsc_delete_temp_file_command = f'gsutil -q rm gs://{db.gcloud_gsc_bucked_name}/{tmp_file_name}'
 
     bq_load_command = ('bq load'
         # global parameters
@@ -383,11 +372,26 @@ def __(db: dbs.BigQueryDB, target_table: str, csv_format: bool = None, skip_head
     if quote_char is not None:
         bq_load_command += f" --quote='{quote_char}'"
 
-    bq_load_command += f' {target_table} gs://{db.gcloud_gsc_bucked_name}/{tmp_file_name}'
+    bq_load_command += f' {target_table}'
 
-    return gcs_write_command + '\n\n' \
-           + bq_load_command + '\n\n' \
-           + gsc_delete_temp_file_command
+    if db.gcloud_gcs_bucket_name:
+        # If defined, use Google Cloud Storage bucked used as cache for loading data
+        import uuid
+        import datetime
+
+        tmp_file_name = f'tmp-{datetime.datetime.now().isoformat()}-{uuid.uuid4().hex}.'+('csv' if csv_format else 'json')
+
+        # TODO: set BOTO config file having the 'gs_service_key_file' parameter, see https://cloud.google.com/storage/docs/boto-gsutil
+        gcs_write_command = f'gsutil -q cp - gs://{db.gcloud_gcs_bucket_name}/{tmp_file_name}'
+        gsc_delete_temp_file_command = f'gsutil -q rm gs://{db.gcloud_gcs_bucket_name}/{tmp_file_name}'
+
+        bq_load_command += f' gs://{db.gcloud_gcs_bucket_name}/{tmp_file_name}'
+
+        return gcs_write_command + '\n\n' \
+               + bq_load_command + '\n\n' \
+               + gsc_delete_temp_file_command
+    else:
+        return bq_load_command
 
 
 
