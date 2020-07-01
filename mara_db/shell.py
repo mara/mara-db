@@ -296,6 +296,9 @@ def __(db: dbs.PostgreSQLDB, target_table: str, csv_format: bool = None, skip_he
     if quote_char is not None:
         sql += f" QUOTE AS '{quote_char}'"
 
+    # escape double quotes
+    sql = sql.replace('"','\\"')
+
     return f'{query_command(db, timezone)} \\\n      --command="{sql}"'
 
 
