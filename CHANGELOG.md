@@ -1,5 +1,15 @@
 # Changelog
 
+## 4.6.0 (2020-07-03) 
+
+- Escape double quotes in copy_from_sdtin_command for PostgreSQL (#33)
+- Add overview page to visualization
+
+**required changes**
+
+If you use quotes in tables names in `Copy` commands, check whether they still work.
+
+
 ## 4.5.0 - 4.5.1 (2020-04-27)
 
 - Don't escape dollar sign in queries for SqlServer
