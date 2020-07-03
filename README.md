@@ -186,3 +186,6 @@ Optionally, for loading data from files into BigQuery, the `gcloud_gcs_bucket_na
 This will use the Google Cloud Storage bucket specified as cache for loading data and over-coming potential limitations.
 For more see [loading-data](https://cloud.google.com/bigquery/docs/bq-command-line-tool#loading_data). 
 By default, files will directly loaded locally as described in [loading-local-data](https://cloud.google.com/bigquery/docs/loading-data-local#loading_data_from_a_local_data_source).
+
+A BigQuery context with a python cursor is also available on demand for easy access to BigQuery databases.
+In order to use, install the official Google python client library: [google-cloud-bigquery](https://cloud.google.com/bigquery/docs/reference/libraries#client-libraries-install-python).
