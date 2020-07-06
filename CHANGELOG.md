@@ -1,6 +1,6 @@
 # Changelog
 
-## 4.6.0 (2020-07-03) 
+## 4.6.0 - 4.6.1 (2020-07-03) 
 
 - Escape double quotes in copy_from_sdtin_command for PostgreSQL (#33)
 - Add overview page to visualization

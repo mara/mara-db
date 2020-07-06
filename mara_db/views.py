@@ -444,7 +444,7 @@ def draw_schema(db_alias: str, schemas: str):
         flask.abort(404, f'unkown database {db_alias}')
 
     schema_names = schemas.split('/')
-    hide_columns = flask.request.args.get('hide-columns', True)
+    hide_columns = flask.request.args.get('hide-columns')
     engine = flask.request.args.get('engine', 'neato')
 
     tables, fk_constraints = extract_schema(db_alias, schema_names)
