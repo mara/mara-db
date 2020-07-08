@@ -4,6 +4,7 @@ import datetime
 import re
 import typing
 from functools import singledispatch
+from html import escape
 
 import flask
 from mara_db import config, dbs
@@ -16,15 +17,35 @@ acl_resource = acl.AclResource(name='DB Schema')
 
 def navigation_entry():
     return navigation.NavigationEntry(
-        label='DB Schema', icon='star', description='Data base schemas',
-        children=[
-            navigation.NavigationEntry(
-                label=alias, icon='database',
-                description=f'The schema of the {alias} db',
-                uri_fn=lambda current_db=alias: flask.url_for('mara_db.index_page', db_alias=current_db))
-            for alias, db in config.databases().items()
-            if supports_extract_schema(db)
-        ])
+        label='DB Schema', icon='star', description='Schemas of all databases connections',
+        children=[navigation.NavigationEntry(
+            label='Overview', icon='list',
+            uri_fn=lambda: flask.url_for('mara_db.index_page'))] +
+                 [
+                     navigation.NavigationEntry(
+                         label=alias, icon='database',
+                         description=f'The schema of the {alias} db',
+                         uri_fn=lambda current_db=alias: flask.url_for('mara_db.schema_page', db_alias=current_db))
+                     for alias, db in config.databases().items()
+                     if supports_extract_schema(db)
+                 ])
+
+
+@blueprint.route('/')
+def index_page():
+    """Overview page of mara_db"""
+    return response.Response(
+        title=f'Database schemas',
+        html=bootstrap.card(
+            body=[_.div(style='display:inline-block; margin-top:15px; margin-bottom:15px; margin-right:50px;')[
+                      _.a(href=flask.url_for('mara_db.schema_page', db_alias=db_alias))[
+                          _.span(class_='fa fa-database')[''], ' ', db_alias],
+                      _.br,
+                      _.span(style='color:#888')[escape(str(type(db).__name__))]
+                  ]
+                  for db_alias, db in config.databases().items()]),
+
+        js_files=[flask.url_for('mara_db.static', filename='schema-page.js')])
 
 
 @singledispatch
@@ -67,7 +88,7 @@ def __(db: dbs.SQLServerDB):
 
 
 @blueprint.route('/<string:db_alias>')
-def index_page(db_alias: str):
+def schema_page(db_alias: str):
     """A page that visiualizes the schemas of a database"""
     if db_alias not in config.databases():
         flask.abort(404, f'unkown database {db_alias}')
@@ -174,7 +195,7 @@ def schema_selection(db_alias: str):
                     [_.option(value=engine)[engine] for engine in ['neato', 'dot', 'twopi', 'fdp']]
                 ]]],
         _.script['''
-var schemaPage = SchemaPage("''' + flask.url_for('mara_db.index_page', db_alias=db_alias) + '''", "''' + db_alias + '''");
+var schemaPage = SchemaPage("''' + flask.url_for('mara_db.schema_page', db_alias=db_alias) + '''", "''' + db_alias + '''");
 ''']]))
 
 
@@ -424,11 +445,10 @@ def draw_schema(db_alias: str, schemas: str):
 
     schema_names = schemas.split('/')
     hide_columns = flask.request.args.get('hide-columns')
-    engine = flask.request.args.get('engine')
+    engine = flask.request.args.get('engine', 'neato')
 
     tables, fk_constraints = extract_schema(db_alias, schema_names)
 
-    import graphviz
     import graphviz.backend
 
     graph = graphviz.Digraph(engine=engine,
