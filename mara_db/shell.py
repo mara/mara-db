@@ -386,13 +386,13 @@ def __(db: dbs.BigQueryDB, target_table: str, csv_format: bool = None, skip_head
 
         # TODO: set BOTO config file having the 'gs_service_key_file' parameter, see https://cloud.google.com/storage/docs/boto-gsutil
         gcs_write_command = f'gsutil -q cp - gs://{db.gcloud_gcs_bucket_name}/{tmp_file_name}'
-        gsc_delete_temp_file_command = f'gsutil -q rm gs://{db.gcloud_gcs_bucket_name}/{tmp_file_name}'
+        gcs_delete_temp_file_command = f'gsutil -q rm gs://{db.gcloud_gcs_bucket_name}/{tmp_file_name}'
 
         bq_load_command += f' gs://{db.gcloud_gcs_bucket_name}/{tmp_file_name}'
 
         return gcs_write_command + '\n\n' \
                + bq_load_command + '\n\n' \
-               + gsc_delete_temp_file_command
+               + gcs_delete_temp_file_command
     else:
         return bq_load_command
 
