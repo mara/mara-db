@@ -8,9 +8,8 @@ import shlex
 import sys
 from functools import singledispatch
 
-from multimethod import multidispatch
-
 from mara_db import dbs, config
+from multimethod import multidispatch
 
 
 @singledispatch
@@ -77,6 +76,24 @@ def __(db: dbs.RedshiftDB, timezone: str = None, echo_queries: bool = None):
             + (' --echo-all' if echo_queries else ' ')
             + ' --no-psqlrc --set ON_ERROR_STOP=on '
             + (db.database or ''))
+
+
+@query_command.register(dbs.BigQueryDB)
+def __(db: dbs.BigQueryDB, timezone: str = None, echo_queries: bool = None):
+    echo_queries = None
+    assert all(v is None for v in [timezone, echo_queries]), f"unimplemented parameter for BigQueryDB"
+
+    return ('bq query'
+            # global parameters
+            + ' --headless'
+            + ' --quiet'
+            + (f' --service_account_private_key_file={db.service_account_private_key_file}' if db.service_account_private_key_file else '')
+            + (f' --location={db.location}' if db.location else '')
+            + (f' --project_id={db.project}' if db.project else '')
+            + (f' --dataset_id={db.dataset}' if db.dataset else '')
+            # command parameters
+            + (f' --use_legacy_sql=' + ('true' if db.use_legacy_sql else 'false'))
+            + ' ')
 
 
 @query_command.register(dbs.MysqlDB)
@@ -329,12 +346,64 @@ def __(db: dbs.RedshiftDB, target_table: str, csv_format: bool = None, skip_head
            + f'{query_command(db, timezone)} \\\n      --command="{sql}"\n\n' \
            + s3_delete_tmp_file_command
 
+
+@copy_from_stdin_command.register(dbs.BigQueryDB)
+def __(db: dbs.BigQueryDB, target_table: str, csv_format: bool = None, skip_header: bool = None,
+       delimiter_char: str = None, quote_char: str = None, null_value_string: str = None, timezone: str = None):
+
+    bq_load_command = ('bq load'
+        # global parameters
+        + ' --headless'
+        + ' --quiet'
+        + (f' --service_account_private_key_file={db.service_account_private_key_file}' if db.service_account_private_key_file else '')
+        + (f' --location={db.location}' if db.location else '')
+        + (f' --project_id={db.project}' if db.project else '')
+        + (f' --dataset_id={db.dataset}' if db.dataset else '')
+        # command parameters
+        + (f' --skip_leading_rows=1' if skip_header else '')
+        )
+
+    if csv_format:
+        bq_load_command += ' --source_format=CSV'
+    else:
+        bq_load_command += ' --source_format=NEWLINE_DELIMITED_JSON'
+
+    if delimiter_char is not None:
+        bq_load_command += f" --field_delimiter='{delimiter_char}'"
+    if null_value_string is not None:
+        bq_load_command += f" --null_marker='{null_value_string}'"
+    if quote_char is not None:
+        bq_load_command += f" --quote='{quote_char}'"
+
+    bq_load_command += f' {target_table}'
+
+    if db.gcloud_gcs_bucket_name:
+        # If defined, use Google Cloud Storage bucked used as cache for loading data
+        import uuid
+        import datetime
+
+        tmp_file_name = f'tmp-{datetime.datetime.now().isoformat()}-{uuid.uuid4().hex}.'+('csv' if csv_format else 'json')
+
+        # TODO: set BOTO config file having the 'gs_service_key_file' parameter, see https://cloud.google.com/storage/docs/boto-gsutil
+        gcs_write_command = f'gsutil -q cp - gs://{db.gcloud_gcs_bucket_name}/{tmp_file_name}'
+        gcs_delete_temp_file_command = f'gsutil -q rm gs://{db.gcloud_gcs_bucket_name}/{tmp_file_name}'
+
+        bq_load_command += f' gs://{db.gcloud_gcs_bucket_name}/{tmp_file_name}'
+
+        return gcs_write_command + '\n\n' \
+               + bq_load_command + '\n\n' \
+               + gcs_delete_temp_file_command
+    else:
+        return bq_load_command
+
+
+
 # -------------------------------
 
 
 @multidispatch
 def copy_command(source_db: object, target_db: object, target_table: str,
-                 timezone = None, csv_format = None, delimiter_char = None) -> str:
+                 timezone=None, csv_format=None, delimiter_char=None) -> str:
     """
     Creates a shell command that
     - receives a sql query from stdin
@@ -391,9 +460,31 @@ def __(source_db: dbs.PostgreSQLDB, target_db: dbs.PostgreSQLDB, target_table: s
                                                delimiter_char=delimiter_char))
 
 
+@copy_command.register(dbs.PostgreSQLDB, dbs.BigQueryDB)
+def __(source_db: dbs.PostgreSQLDB, target_db: dbs.PostgreSQLDB, target_table: str,
+       timezone: str = None, csv_format: bool = None, delimiter_char: str = None):
+    if csv_format is None:
+        csv_format = True
+    return (copy_to_stdout_command(source_db, delimiter_char=delimiter_char, csv_format=csv_format) + ' \\\n'
+            + '  | ' + copy_from_stdin_command(target_db, target_table=target_table,
+                                               timezone=timezone, csv_format=csv_format,
+                                               delimiter_char=delimiter_char))
+
+
 @copy_command.register(dbs.MysqlDB, dbs.PostgreSQLDB)
 def __(source_db: dbs.MysqlDB, target_db: dbs.PostgreSQLDB, target_table: str,
        timezone: str = None, csv_format: bool = None, delimiter_char: str = None):
+    return (copy_to_stdout_command(source_db) + ' \\\n'
+            + '  | ' + copy_from_stdin_command(target_db, target_table=target_table,
+                                               null_value_string='NULL', timezone=timezone,
+                                               csv_format=csv_format, delimiter_char=delimiter_char))
+
+
+@copy_command.register(dbs.MysqlDB, dbs.BigQueryDB)
+def __(source_db: dbs.MysqlDB, target_db: dbs.PostgreSQLDB, target_table: str,
+       timezone: str = None, csv_format: bool = None, delimiter_char: str = None):
+    if csv_format is None:
+        csv_format = True
     return (copy_to_stdout_command(source_db) + ' \\\n'
             + '  | ' + copy_from_stdin_command(target_db, target_table=target_table,
                                                null_value_string='NULL', timezone=timezone,
@@ -411,12 +502,33 @@ def __(source_db: dbs.SQLServerDB, target_db: dbs.PostgreSQLDB, target_table: st
                                                skip_header=True, timezone=timezone))
 
 
+@copy_command.register(dbs.SQLServerDB, dbs.BigQueryDB)
+def __(source_db: dbs.SQLServerDB, target_db: dbs.PostgreSQLDB, target_table: str,
+       timezone: str = None, csv_format: bool = None, delimiter_char: str = None):
+    if csv_format is None:
+        csv_format = True
+    return (copy_to_stdout_command(source_db) + ' \\\n'
+            + '  | ' + copy_from_stdin_command(target_db, target_table=target_table, csv_format=csv_format,
+                                               delimiter_char=delimiter_char,
+                                               skip_header=True, timezone=timezone))
+
+
 @copy_command.register(dbs.OracleDB, dbs.PostgreSQLDB)
 def __(source_db: dbs.OracleDB, target_db: dbs.PostgreSQLDB, target_table: str,
        timezone: str = None, csv_format: bool = None, delimiter_char: str = None):
     if csv_format is None:
         csv_format = True
+    return (copy_to_stdout_command(source_db) + ' \\\n'
+            + '  | ' + copy_from_stdin_command(target_db, target_table=target_table,
+                                               csv_format=csv_format, skip_header=False, delimiter_char=delimiter_char,
+                                               null_value_string='NULL', timezone=timezone))
 
+
+@copy_command.register(dbs.OracleDB, dbs.BigQueryDB)
+def __(source_db: dbs.OracleDB, target_db: dbs.PostgreSQLDB, target_table: str,
+       timezone: str = None, csv_format: bool = None, delimiter_char: str = None):
+    if csv_format is None:
+        csv_format = True
     return (copy_to_stdout_command(source_db) + ' \\\n'
             + '  | ' + copy_from_stdin_command(target_db, target_table=target_table,
                                                csv_format=csv_format, skip_header=False, delimiter_char=delimiter_char,
@@ -424,6 +536,17 @@ def __(source_db: dbs.OracleDB, target_db: dbs.PostgreSQLDB, target_table: str,
 
 
 @copy_command.register(dbs.SQLiteDB, dbs.PostgreSQLDB)
+def __(source_db: dbs.SQLiteDB, target_db: dbs.PostgreSQLDB, target_table: str,
+       timezone: str = None, csv_format: bool = None, delimiter_char: str = None):
+    if csv_format is None:
+        csv_format = True
+    return (copy_to_stdout_command(source_db) + ' \\\n'
+            + '  | ' + copy_from_stdin_command(target_db, target_table=target_table, timezone=timezone,
+                                               null_value_string='NULL', quote_char="''", csv_format=csv_format,
+                                               delimiter_char=delimiter_char))
+
+
+@copy_command.register(dbs.SQLiteDB, dbs.BigQueryDB)
 def __(source_db: dbs.SQLiteDB, target_db: dbs.PostgreSQLDB, target_table: str,
        timezone: str = None, csv_format: bool = None, delimiter_char: str = None):
     if csv_format is None:
