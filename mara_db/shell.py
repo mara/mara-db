@@ -342,9 +342,9 @@ def __(db: dbs.RedshiftDB, target_table: str, csv_format: bool = None, skip_head
     if quote_char is not None:
         sql += f" QUOTE AS '{quote_char}'"
 
-    return s3_write_command + '\n\n' \
-           + f'{query_command(db, timezone)} \\\n      --command="{sql}"\n\n' \
-           + s3_delete_tmp_file_command
+    return s3_write_command + ' &&\n\n' \
+            + f'{query_command(db, timezone)} \\\n      --command="{sql}" \\\n  || /bin/false \\\n  ; RC=$?\n\n' \
+            + s3_delete_tmp_file_command+' &&\n  $(exit $RC) || /bin/false'
 
 
 @copy_from_stdin_command.register(dbs.BigQueryDB)
@@ -390,9 +390,9 @@ def __(db: dbs.BigQueryDB, target_table: str, csv_format: bool = None, skip_head
 
         bq_load_command += f' gs://{db.gcloud_gcs_bucket_name}/{tmp_file_name}'
 
-        return gcs_write_command + '\n\n' \
-               + bq_load_command + '\n\n' \
-               + gcs_delete_temp_file_command
+        return gcs_write_command + ' &&\n\n' \
+               + bq_load_command + ' \\\n  || /bin/false \\\n  ; RC=$?\n\n' \
+               + gcs_delete_temp_file_command+' &&\n  $(exit $RC) || /bin/false'
     else:
         return bq_load_command
 
