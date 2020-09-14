@@ -468,7 +468,7 @@ def __(source_db: dbs.PostgreSQLDB, target_db: dbs.PostgreSQLDB, target_table: s
     return (copy_to_stdout_command(source_db, delimiter_char=delimiter_char, csv_format=csv_format) + ' \\\n'
             + '  | ' + copy_from_stdin_command(target_db, target_table=target_table,
                                                timezone=timezone, csv_format=csv_format,
-                                               delimiter_char=delimiter_char))
+                                               delimiter_char='\t' if not delimiter_char and csv_format else delimiter_char))
 
 
 @copy_command.register(dbs.MysqlDB, dbs.PostgreSQLDB)
