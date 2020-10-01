@@ -122,7 +122,8 @@ def __(db: dbs.SQLServerDB, timezone: str = None, echo_queries: bool = None):
     return (command + 'sqsh -a 1 -d 0 -f 10'
             + (f' -U {db.user}' if db.user else '')
             + (f' -P {db.password}' if db.password else '')
-            + (f' -S {db.host}' if db.host else '')
+            + (f' -S {db.host}' if db.host and not db.port else '')
+            + (f' -S {db.host}:{db.port}' if db.host and db.port else '')
             + (f' -D {db.database}' if db.database else '')
             + (f' -e' if echo_queries else ''))
 

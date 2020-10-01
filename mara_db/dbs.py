@@ -100,8 +100,11 @@ class MysqlDB(DB):
 
 
 class SQLServerDB(DB):
-    def __init__(self, host: str = None, database: str = None, user: str = None, password: str = None, odbc_driver: str = None):
+    def __init__(self, host: str = None, port: int = None, database: str = None,
+                 user: str = None, password: str = None, odbc_driver: str = None):
+        # NOTE: The support for named instances is not added because the command `sqsh` does not support it
         self.host = host
+        self.port = port
         self.database = database
         self.user = user
         self.password = password
