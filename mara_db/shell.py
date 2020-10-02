@@ -45,7 +45,7 @@ def __(alias: str, timezone: str = None, echo_queries: bool = None):
 @query_command.register(dbs.PostgreSQLDB)
 def __(db: dbs.PostgreSQLDB, timezone: str = None, echo_queries: bool = None):
     if echo_queries is None:
-        echo_queries = True
+        echo_queries = config.default_echo_queries()
 
     return (f'PGTZ={timezone or config.default_timezone()} '
             + (f"PGPASSWORD='{db.password}' " if db.password else '')
@@ -65,7 +65,7 @@ def __(db: dbs.PostgreSQLDB, timezone: str = None, echo_queries: bool = None):
 @query_command.register(dbs.RedshiftDB)
 def __(db: dbs.RedshiftDB, timezone: str = None, echo_queries: bool = None):
     if echo_queries is None:
-        echo_queries = True
+        echo_queries = config.default_echo_queries()
 
     return (f'PGTZ={timezone or config.default_timezone()} '
             + (f"PGPASSWORD='{db.password}' " if db.password else '')
@@ -113,7 +113,7 @@ def __(db: dbs.SQLServerDB, timezone: str = None, echo_queries: bool = None):
     assert all(v is None for v in [timezone]), "unimplemented parameter for SQLServerDB"
 
     if echo_queries is None:
-        echo_queries = True
+        echo_queries = config.default_echo_queries()
 
     # sqsh does not do anything when a statement is not terminated by a ';', add one to be sure
     command = "(cat && echo ';') \\\n  | "
