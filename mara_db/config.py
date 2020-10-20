@@ -17,6 +17,13 @@ def default_timezone() -> str:
     return 'Europe/Berlin'
 
 
+def default_echo_queries() -> bool:
+    """
+    If queries should be printed on execution by default, if applicable
+    """
+    return True
+
+
 def schema_ui_foreign_key_column_regex() -> typing.Pattern:
     """A regex that classifies a table column as being used in a foreign constraint (for coloring missing constraints)"""
     return r'.*_fk$'
