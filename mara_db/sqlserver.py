@@ -17,7 +17,12 @@ def sqlserver_cursor_context(db: typing.Union[str, mara_db.dbs.SQLServerDB]) -> 
     assert (isinstance(db, mara_db.dbs.SQLServerDB))
 
     cursor = None
-    connection = pyodbc.connect(f"DRIVER={{{db.odbc_driver}}};SERVER={db.host};DATABASE={db.database};UID={db.user};PWD={db.password}")
+
+    server = db.host
+    if db.port: # connecting via TCP/IP port
+        server = f"{server},{db.port}"
+
+    connection = pyodbc.connect(f"DRIVER={{{db.odbc_driver}}};SERVER={server};DATABASE={db.database};UID={db.user};PWD={db.password}")
     try:
         cursor = connection.cursor()
         yield cursor
