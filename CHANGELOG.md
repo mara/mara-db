@@ -1,8 +1,12 @@
 # Changelog
 
-## 4.7.0 (2020-07-21) 
+## 4.7.0 - 4.7.1 (2020-10-23) 
 
 - Add BigQuery support
+- Fix copy from PostgreSQLDB to BigQueryDB when delimiter_char is not set (#36)
+- Add config default_echo_queries (#38)
+- Add support for SQLServerDB port (#37)
+- Fix exit command sequence when previous command has exit code not zero (#40)
 
 ## 4.6.0 - 4.6.1 (2020-07-03) 
 
