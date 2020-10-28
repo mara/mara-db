@@ -398,6 +398,21 @@ def __(db: dbs.BigQueryDB, target_table: str, csv_format: bool = None, skip_head
         return bq_load_command
 
 
+@copy_from_stdin_command.register(dbs.SQLServerDB)
+def __(db: dbs.SQLServerDB, target_table: str, csv_format: bool = None, skip_header: bool = None,
+       delimiter_char: str = None, quote_char: str = None, null_value_string: str = None, timezone: str = None):
+    assert all(v is None for v in [null_value_string, timezone]), "unimplemented parameter for SQLServerDB"
+    if csv_format == False:
+        raise ValueError('The parameter csv_format must be true or none when the db_alias referres to a SQL Server (SQLServerDB)')
+    return (f'bcp {target_table} in /dev/stdin'
+            + (f' -U {db.user}' if db.user else '')
+            + (f' -P {db.password}' if db.password else '')
+            + (f' -S {db.host}' if db.host else '')
+            + (f' -d {db.database}' if db.database else '')
+            + ' -c'
+            + (f' -t {delimiter_char}' if delimiter_char else ' -t \',\'')
+            + (' -F2' if skip_header else ''))
+
 
 # -------------------------------
 
