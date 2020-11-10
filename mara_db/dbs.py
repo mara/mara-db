@@ -114,6 +114,30 @@ class SQLServerDB(DB):
             self.odbc_driver = odbc_driver
 
 
+class SqlcmdSQLServerDB(SQLServerDB):
+    def __init__(self, host: str = None, instance: str = None, port: int = None, database: str = None,
+                 user: str = None, password: str = None, odbc_driver: str = None,
+                 protocol: str = None, quoted_identifier: bool = True):
+        """
+        Args:
+            quoted_identifier: If set to true, the SET option QUOTED_IDENTIFIER is set to ON, otherwise OFF.
+            protocol: can be tcp (TCP/IP connection), np (named pipe) or lcp (using shared memory). See as well: https://docs.microsoft.com/en-us/sql/ssms/scripting/sqlcmd-connect-to-the-database-engine?view=sql-server-ver15
+        """
+        super().__init__(host=host, port=port, database=database, user=user, password=password, odbc_driver=odbc_driver)
+        if protocol:
+            if protocol not in ['tcp','np','lpc']:
+                raise ValueError(f'Not supported protocol: {protocol}')
+            if protocol == 'tcp' and instance:
+                raise ValueError(f'You can not use protocol tcp with an instance name')
+            if protocol in ['np','lcp'] and port:
+                raise ValueError(f'You can not use protocol np/lcp with a port number')
+        if instance is not None and port is not None:
+            raise ValueError('You can only use instance or port, not both together')
+        self.protocol = protocol
+        self.quoted_identifier = quoted_identifier
+        self.instance = instance
+
+
 class OracleDB(DB):
     def __init__(self, host: str = None, port: int = 0, endpoint: str = None, user: str = None, password: str = None):
         self.host = host

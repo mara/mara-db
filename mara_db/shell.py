@@ -128,6 +128,41 @@ def __(db: dbs.SQLServerDB, timezone: str = None, echo_queries: bool = None):
             + (f' -e' if echo_queries else ''))
 
 
+@query_command.register(dbs.SqlcmdSQLServerDB)
+def __(db: dbs.SqlcmdSQLServerDB, timezone: str = None, echo_queries: bool = None):
+    assert all(v is None for v in [timezone]), "unimplemented parameter for SQLServerDB"
+
+    if echo_queries is None:
+        echo_queries = config.default_echo_queries()
+
+    if db.host:
+        # connection to DB, see: https://docs.microsoft.com/en-us/sql/ssms/scripting/sqlcmd-connect-to-the-database-engine?view=sql-server-ver15
+        if db.protocol == 'tcp':
+            port = db.port if db.port else 1433
+            server = f'tcp:{db.host},{port}'
+        elif db.protocol == 'np':
+            pipe = f'MSSQL${db.instance}\\sql\\query' if db.instance else 'pipe\\sql\\query'
+            server = f'np:\\\\{db.host}\\{pipe}'
+        elif db.protocol == 'lpc':
+            server = f'lcp:{db.host}\\{db.instance}' if db.instance else f'lcp:{db.host}'
+        else:
+            if db.instance:
+                server = f'{db.host}\\{db.instance}'
+            elif db.port:
+                server = f'{db.host},{db.port}'
+            else:
+                server = db.host
+
+    return ('sqlcmd -b -r'
+            + (f' -U {db.user}' if db.user else '')
+            + (f' -P {db.password}' if db.password else '')
+            + (f' -S {server}' if server else '')
+            + (f' -d {db.database}' if db.database else '')
+            + (' -e' if echo_queries else '')
+            + (' -I' if db.quoted_identifier else '')
+            + (' -i /dev/stdin'))
+
+
 @query_command.register(dbs.OracleDB)
 def __(db: dbs.OracleDB, timezone: str = None, echo_queries: bool = None):
     assert all(v is None for v in [timezone, echo_queries]), "unimplemented parameter for OracleDB"
@@ -232,6 +267,25 @@ def __(db: dbs.SQLServerDB, header: bool = None, footer: bool = None, delimiter_
     assert all(
         v is None for v in [header, footer, delimiter_char, csv_format]), "unimplemented parameter for SQLServerDB"
     return query_command(db, echo_queries=False) + " -m csv"
+
+
+@copy_to_stdout_command.register(dbs.SqlcmdSQLServerDB)
+def __(db: dbs.SqlcmdSQLServerDB, header: bool = None, footer: bool = None, delimiter_char: str = None,
+       csv_format: bool = None):
+    assert all(
+        v is None for v in [footer, delimiter_char, csv_format]), "unimplemented parameter for SQLServerDB"
+
+    # manipulate the SQL query
+    command = "(echo 'SET NOCOUNT ON\n' && cat) \\\n  | "
+    command += "(echo 'GO\n' && cat) \\\n  | "
+
+    return (command + query_command(db, echo_queries=False)
+            + ' -W'
+            + (f' "-s{delimiter_char}"' if delimiter_char else ' -s,')
+            + (f' -h-1' if not header else '')
+            + (f' -w 65535') # see https://docs.microsoft.com/en-us/sql/tools/sqlcmd-utility?view=sql-server-ver15, is used to avoid line-break when output is longer then 80 characters
+            # removes the dashed line between header and data rows
+            + (" | sed -e '2d'" if header else ''))
 
 
 @copy_to_stdout_command.register(dbs.OracleDB)
