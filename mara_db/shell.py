@@ -557,6 +557,17 @@ def __(source_db: dbs.SQLServerDB, target_db: dbs.PostgreSQLDB, target_table: st
                                                skip_header=True, timezone=timezone))
 
 
+@copy_command.register(dbs.SqlcmdSQLServerDB, dbs.PostgreSQLDB)
+def __(source_db: dbs.SQLServerDB, target_db: dbs.PostgreSQLDB, target_table: str,
+       timezone: str = None, csv_format: bool = None, delimiter_char: str = None):
+    if csv_format is None:
+        csv_format = True
+    return (copy_to_stdout_command(source_db) + ' \\\n'
+            + '  | ' + copy_from_stdin_command(target_db, target_table=target_table, csv_format=csv_format,
+                                               delimiter_char=delimiter_char,
+                                               null_value_string='NULL', skip_header=True, timezone=timezone))
+
+
 @copy_command.register(dbs.SQLServerDB, dbs.BigQueryDB)
 def __(source_db: dbs.SQLServerDB, target_db: dbs.PostgreSQLDB, target_table: str,
        timezone: str = None, csv_format: bool = None, delimiter_char: str = None):
@@ -566,6 +577,17 @@ def __(source_db: dbs.SQLServerDB, target_db: dbs.PostgreSQLDB, target_table: st
             + '  | ' + copy_from_stdin_command(target_db, target_table=target_table, csv_format=csv_format,
                                                delimiter_char=delimiter_char,
                                                skip_header=True, timezone=timezone))
+
+
+@copy_command.register(dbs.SqlcmdSQLServerDB, dbs.BigQueryDB)
+def __(source_db: dbs.SQLServerDB, target_db: dbs.PostgreSQLDB, target_table: str,
+       timezone: str = None, csv_format: bool = None, delimiter_char: str = None):
+    if csv_format is None:
+        csv_format = True
+    return (copy_to_stdout_command(source_db) + ' \\\n'
+            + '  | ' + copy_from_stdin_command(target_db, target_table=target_table, csv_format=csv_format,
+                                               delimiter_char=delimiter_char,
+                                               null_value_string='NULL', skip_header=True, timezone=timezone))
 
 
 @copy_command.register(dbs.OracleDB, dbs.PostgreSQLDB)
