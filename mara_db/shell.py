@@ -5,10 +5,11 @@ Shell command generation for
 """
 
 import shlex
-import sys
 from functools import singledispatch
 
+import sys
 from mara_db import dbs, config
+from mara_db.bigquery import bigquery_credentials
 from multimethod import multidispatch
 
 
@@ -80,19 +81,20 @@ def __(db: dbs.RedshiftDB, timezone: str = None, echo_queries: bool = None):
 
 @query_command.register(dbs.BigQueryDB)
 def __(db: dbs.BigQueryDB, timezone: str = None, echo_queries: bool = None):
-    echo_queries = None
-    assert all(v is None for v in [timezone, echo_queries]), f"unimplemented parameter for BigQueryDB"
+    from .bigquery import bigquery_credentials
 
-    return ('bq query'
-            # global parameters
-            + ' --headless'
-            + ' --quiet'
-            + (f' --service_account_private_key_file={db.service_account_private_key_file}' if db.service_account_private_key_file else '')
-            + (f' --location={db.location}' if db.location else '')
-            + (f' --project_id={db.project}' if db.project else '')
-            + (f' --dataset_id={db.dataset}' if db.dataset else '')
-            # command parameters
+    service_account_email = bigquery_credentials(db).service_account_email
+
+    return (f'CLOUDSDK_CORE_ACCOUNT={service_account_email}'
+            + ' bq query'
+            + ' --max_rows=50000000'  # run without user interaction
+            + ' --headless'  # run without user interaction
+            + ' --quiet'  # no job progress updates
+            + ' --format=csv'  # no job progress updates
             + (f' --use_legacy_sql=' + ('true' if db.use_legacy_sql else 'false'))
+            + (f' --project_id={db.project}' if db.project else '')
+            + (f' --location={db.location}' if db.location else '')
+            + (f' --dataset_id={db.dataset}' if db.dataset else '')
             + ' ')
 
 
@@ -122,8 +124,7 @@ def __(db: dbs.SQLServerDB, timezone: str = None, echo_queries: bool = None):
     return (command + 'sqsh -a 1 -d 0 -f 10'
             + (f' -U {db.user}' if db.user else '')
             + (f' -P {db.password}' if db.password else '')
-            + (f' -S {db.host}' if db.host and not db.port else '')
-            + (f' -S {db.host}:{db.port}' if db.host and db.port else '')
+            + (f' -S {db.host}' if db.host else '')
             + (f' -D {db.database}' if db.database else '')
             + (f' -e' if echo_queries else ''))
 
@@ -214,6 +215,14 @@ def __(db: dbs.PostgreSQLDB, header: bool = None, footer: bool = None,
                 + f" --no-align --field-separator='{delimiter_char}' \\\n"
                 + "  | sed '/^$/d'"  # remove empty lines
                 )
+
+
+@copy_to_stdout_command.register(dbs.BigQueryDB)
+def __(db: dbs.BigQueryDB, header: bool = None, footer: bool = None, delimiter_char: str = None,
+       csv_format: bool = None):
+    assert all(v is None for v in [header, footer]), "unimplemented parameter for BigQuery"
+    remove_header = 'sed 1d'
+    return query_command(db) + f' | {remove_header}'
 
 
 @copy_to_stdout_command.register(dbs.MysqlDB)
@@ -315,7 +324,7 @@ def __(db: dbs.PostgreSQLDB, target_table: str, csv_format: bool = None, skip_he
         sql += f" QUOTE AS '{quote_char}'"
 
     # escape double quotes
-    sql = sql.replace('"','\\"')
+    sql = sql.replace('"', '\\"')
 
     return f'{query_command(db, timezone)} \\\n      --command="{sql}"'
 
@@ -351,18 +360,26 @@ def __(db: dbs.RedshiftDB, target_table: str, csv_format: bool = None, skip_head
 @copy_from_stdin_command.register(dbs.BigQueryDB)
 def __(db: dbs.BigQueryDB, target_table: str, csv_format: bool = None, skip_header: bool = None,
        delimiter_char: str = None, quote_char: str = None, null_value_string: str = None, timezone: str = None):
+    assert db.gcloud_gcs_bucket_name, f"Please provide the 'gcloud_gcs_bucket_name' parameter to database '{db}' "
 
-    bq_load_command = ('bq load'
-        # global parameters
-        + ' --headless'
-        + ' --quiet'
-        + (f' --service_account_private_key_file={db.service_account_private_key_file}' if db.service_account_private_key_file else '')
-        + (f' --location={db.location}' if db.location else '')
-        + (f' --project_id={db.project}' if db.project else '')
-        + (f' --dataset_id={db.dataset}' if db.dataset else '')
-        # command parameters
-        + (f' --skip_leading_rows=1' if skip_header else '')
-        )
+    import uuid
+    import datetime
+
+    tmp_file_name = f'tmp-{datetime.datetime.now().isoformat()}-{uuid.uuid4().hex}.' + (
+        'csv' if csv_format else 'json')
+
+    service_account_email = bigquery_credentials(db).service_account_email
+
+    set_env_prefix = f'CLOUDSDK_CORE_ACCOUNT={service_account_email}'
+    bq_load_command = (set_env_prefix
+                       + ' bq load'
+                       + ' --headless'
+                       + ' --quiet'
+                       + (f' --location={db.location}' if db.location else '')
+                       + (f' --project_id={db.project}' if db.project else '')
+                       + (f' --dataset_id={db.dataset}' if db.dataset else '')
+                       + (f' --skip_leading_rows=1' if skip_header else '')
+                       )
 
     if csv_format:
         bq_load_command += ' --source_format=CSV'
@@ -376,27 +393,14 @@ def __(db: dbs.BigQueryDB, target_table: str, csv_format: bool = None, skip_head
     if quote_char is not None:
         bq_load_command += f" --quote='{quote_char}'"
 
-    bq_load_command += f' {target_table}'
+    bq_load_command += f" '{target_table}'  gs://{db.gcloud_gcs_bucket_name}/{tmp_file_name}"
 
-    if db.gcloud_gcs_bucket_name:
-        # If defined, use Google Cloud Storage bucked used as cache for loading data
-        import uuid
-        import datetime
+    gcs_write_command = f'{set_env_prefix} gsutil -q cp - gs://{db.gcloud_gcs_bucket_name}/{tmp_file_name}'
+    gcs_delete_temp_file_command = f'{set_env_prefix} gsutil -q rm gs://{db.gcloud_gcs_bucket_name}/{tmp_file_name}'
 
-        tmp_file_name = f'tmp-{datetime.datetime.now().isoformat()}-{uuid.uuid4().hex}.'+('csv' if csv_format else 'json')
-
-        # TODO: set BOTO config file having the 'gs_service_key_file' parameter, see https://cloud.google.com/storage/docs/boto-gsutil
-        gcs_write_command = f'gsutil -q cp - gs://{db.gcloud_gcs_bucket_name}/{tmp_file_name}'
-        gcs_delete_temp_file_command = f'gsutil -q rm gs://{db.gcloud_gcs_bucket_name}/{tmp_file_name}'
-
-        bq_load_command += f' gs://{db.gcloud_gcs_bucket_name}/{tmp_file_name}'
-
-        return gcs_write_command + ' &&\n\n' \
-               + bq_load_command + ' \\\n  || /bin/false \\\n  ; RC=$?\n\n' \
-               + gcs_delete_temp_file_command+' &&\n  $(exit $RC) || /bin/false'
-    else:
-        return bq_load_command
-
+    return gcs_write_command + '\\\n  \\\n  && ' \
+           + bq_load_command + '\\\n  \\\n  && ' \
+           + gcs_delete_temp_file_command
 
 
 # -------------------------------
@@ -462,7 +466,18 @@ def __(source_db: dbs.PostgreSQLDB, target_db: dbs.PostgreSQLDB, target_table: s
 
 
 @copy_command.register(dbs.PostgreSQLDB, dbs.BigQueryDB)
-def __(source_db: dbs.PostgreSQLDB, target_db: dbs.PostgreSQLDB, target_table: str,
+def __(source_db: dbs.PostgreSQLDB, target_db: dbs.BigQueryDB, target_table: str,
+       timezone: str = None, csv_format: bool = None, delimiter_char: str = None):
+    if csv_format is None:
+        csv_format = True
+    return (copy_to_stdout_command(source_db, delimiter_char=delimiter_char, csv_format=csv_format) + ' \\\n'
+            + '  | ' + copy_from_stdin_command(target_db, target_table=target_table,
+                                               timezone=timezone, csv_format=csv_format,
+                                               delimiter_char='\t' if not delimiter_char and csv_format else delimiter_char))
+
+
+@copy_command.register(dbs.BigQueryDB, dbs.PostgreSQLDB)
+def __(source_db: dbs.BigQueryDB, target_db: dbs.PostgreSQLDB, target_table: str,
        timezone: str = None, csv_format: bool = None, delimiter_char: str = None):
     if csv_format is None:
         csv_format = True
