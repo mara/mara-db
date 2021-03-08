@@ -10,7 +10,7 @@ from google.api_core.exceptions import BadRequest
 
 
 def bigquery_credentials(db: typing.Union[str, mara_db.dbs.BigQueryDB]) -> 'google.oauth2.service_account.Credentials':
-    """Get the parsed service account """
+    """Get the parsed service account"""
     from google.oauth2.service_account import Credentials
 
     if isinstance(db, str):
@@ -53,9 +53,9 @@ def create_bigquery_table_from_postgresql_query(
         postgresql_query: str, postgresql_db_alias: str,
         bigquery_db_alias: str, bigquery_dataset_id: str, bigquery_table_name: str):
     """
-    Creates a table in for bigquery from a Postgresql SELECT query. Will print the query
+    Creates a table for bigquery from a Postgresql SELECT query. Will print the query
 
-    Usefull for copying PostgreSQL tables to BigQuery (create table first and then copy)
+    Useful for copying PostgreSQL tables to BigQuery (create table first and then copy)
 
     Example:
         >>> create_bigquery_table_from_postgresql_query(
