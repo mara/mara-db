@@ -1,9 +1,13 @@
-from setuptools import setup, find_packages
 import re
+
+from setuptools import setup, find_packages
+
 
 def get_long_description():
     with open('README.md') as f:
-        return re.sub('!\[(.*?)\]\(docs/(.*?)\)', r'![\1](https://github.com/mara/mara-db/raw/master/docs/\2)', f.read())
+        return re.sub('!\[(.*?)\]\(docs/(.*?)\)',
+                      r'![\1](https://github.com/mara/mara-db/raw/master/docs/\2)', f.read())
+
 
 setup(
     name='mara-db',
@@ -14,7 +18,7 @@ setup(
     long_description=get_long_description(),
     long_description_content_type='text/markdown',
 
-    url = 'https://github.com/mara/mara-db',
+    url='https://github.com/mara/mara-db',
 
     install_requires=[
         'SQLAlchemy>=1.1.5',
@@ -24,6 +28,9 @@ setup(
         'graphviz>=0.8',
         'mara-page>=1.3.0',
         'psycopg2-binary>=2.7.3'],
+
+    setup_requires=['setuptools_scm'],
+    include_package_data=True,
 
     extras_require={
         'test': ['pytest', 'pytest_click'],
