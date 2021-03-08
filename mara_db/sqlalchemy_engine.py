@@ -41,6 +41,21 @@ def __(db: mara_db.dbs.PostgreSQLDB):
         + f'{":" + str(db.port) if db.port else ""}/{db.database}')
 
 
+@engine.register(mara_db.dbs.BigQueryDB)
+def __(db: mara_db.dbs.BigQueryDB):
+    # creates bigquery dialect
+    url = 'bigquery://'
+    if db.project:
+        url += db.project
+        if db.dataset:
+            url += '/' + db.dataset
+
+    return sqlalchemy.create_engine(url,
+                                    credentials_path=db.service_account_json_file_name,
+                                    location=db.location)
+
+
 @engine.register(mara_db.dbs.SQLiteDB)
 def __(db: mara_db.dbs.SQLiteDB):
     return sqlalchemy.create_engine(f'sqlite:///{db.file_name}')
+
