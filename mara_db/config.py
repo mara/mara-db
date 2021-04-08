@@ -9,14 +9,6 @@ def databases() -> {str: dbs.DB}:
     return {'mara': dbs.PostgreSQLDB(host='localhost', database='mara', user='root')}
 
 
-def default_timezone() -> str:
-    """
-    The default timezone to be used for database connections
-    See: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
-    """
-    return 'Europe/Berlin'
-
-
 def default_echo_queries() -> bool:
     """
     If queries should be printed on execution by default, if applicable
