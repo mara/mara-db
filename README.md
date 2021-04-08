@@ -53,8 +53,8 @@ import mara_db.shell
 print(mara_db.shell.query_command('source-1'))
 # -> mysql --default-character-set=utf8mb4 --user=dwh --host=some-localhost my_app
 
-print(mara_db.shell.query_command('dwh', timezone='Europe/Lisbon', echo_queries=False))
-# -> PGTZ=Europe/Lisbon PGOPTIONS=--client-min-messages=warning psql  --no-psqlrc --set ON_ERROR_STOP=on dwh
+print(mara_db.shell.query_command('dwh', echo_queries=False))
+# -> PGOPTIONS=--client-min-messages=warning psql  --no-psqlrc --set ON_ERROR_STOP=on dwh
 ```
 
 The function `copy_to_stdout_command` creates a shell command that receives a query on stdin and writes the result to stdout in tabular form:
@@ -68,7 +68,7 @@ Similarly, `copy_from_stdin_command` creates a client command that receives tabu
 
 ```python
 print(mara_db.shell.copy_from_stdin_command('dwh', target_table='some_table', delimiter_char=';'))
-# -> PGTZ=Europe/Berlin PGOPTIONS=--client-min-messages=warning psql --echo-all --no-psqlrc --set ON_ERROR_STOP=on dwh \
+# -> PGOPTIONS=--client-min-messages=warning psql --echo-all --no-psqlrc --set ON_ERROR_STOP=on dwh \
 #      --command="COPY some_table FROM STDIN WITH DELIMITER AS ';'"
 ```
 
@@ -78,7 +78,7 @@ Finally, `copy_command` creates a shell command that receives a sql query from s
 print(mara_db.shell.copy_command('source-2', 'dwh', target_table='some_table'))
 # -> sed 's/\\\\$/\$/g;s/\$/\\\\$/g' \
 #   | sqsh  -U dwh_read -P 123abc -S some-sql-server -D db1 -m csv \
-#   | PGTZ=Europe/Berlin PGOPTIONS=--client-min-messages=warning psql --echo-all --no-psqlrc --set ON_ERROR_STOP=on dwh \
+#   | PGOPTIONS=--client-min-messages=warning psql --echo-all --no-psqlrc --set ON_ERROR_STOP=on dwh \
 #         --command = "COPY some_table FROM STDIN WITH CSV HEADER"
 ```
 
