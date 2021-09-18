@@ -59,3 +59,9 @@ def __(db: mara_db.dbs.BigQueryDB):
 def __(db: mara_db.dbs.SQLiteDB):
     return sqlalchemy.create_engine(f'sqlite:///{db.file_name}')
 
+
+@engine.register(mara_db.dbs.SQLServerDB)
+def __(db: mara_db.dbs.SQLServerDB):
+    port = db.port if db.port else 1433
+    driver = db.odbc_driver.replace(' ','+')
+    return sqlalchemy.create_engine(f'mssql+pyodbc://{db.user}:{db.password}@{db.host}:{port}/{db.database}?driver={driver}')
