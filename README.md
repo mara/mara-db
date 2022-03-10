@@ -91,7 +91,7 @@ The following **command line clients** are used to access the various databases:
 | --- | --- | --- |
 | Postgresql / Redshift | `psql` | Included in standard distributions. |
 | MariaDB / Mysql | `mysql` | Included in standard distributions. |
-| SQL Server | `sqsh` | From [https://sourceforge.net/projects/sqsh/](https://sourceforge.net/projects/sqsh/), usually messy to get working. On ubuntu, use [http://ppa.launchpad.net/jasc/sqsh/ubuntu/](http://ppa.launchpad.net/jasc/sqsh/ubuntu/) backport. On Mac, try the homebrew version or install from source. |
+| SQL Server | `sqsh`<br>- or -<br>`sqlcmd` | **sqsh**: From [https://sourceforge.net/projects/sqsh/](https://sourceforge.net/projects/sqsh/), usually messy to get working. On ubuntu, use [http://ppa.launchpad.net/jasc/sqsh/ubuntu/](http://ppa.launchpad.net/jasc/sqsh/ubuntu/) backport. On Mac, try the homebrew version or install from source.<br>**sqlcmd**: Official Microsoft Utility for SQL Server. See [sqlcmd Utility](https://docs.microsoft.com/en-us/sql/tools/sqlcmd-utility) |
 | Oracle | `sqlplus64` | See the [Oracle Instant Client](https://www.oracle.com/technetwork/database/database-technologies/instant-client/overview/index.html) homepage for details. On Mac, follow [these instructions](https://vanwollingen.nl/install-oracle-instant-client-and-sqlplus-using-homebrew-a233ce224bf). Then ` sudo ln -s /usr/local/bin/sqlplus /usr/local/bin/sqlplus64` to make the binary accessible as `sqlplus64`. |
 | SQLite | `sqlite3` | Available in standard distributions. Version >3.20.x required (not the case on Ubuntu 14.04). |
 | Big Query | `bq` | See the [Google Cloud SDK](https://cloud.google.com/sdk/docs/quickstarts) page for details. |
