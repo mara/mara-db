@@ -9,7 +9,6 @@ from functools import singledispatch
 
 import sys
 from mara_db import dbs, config
-from mara_db.bigquery import bigquery_credentials
 from multimethod import multidispatch
 
 
@@ -364,6 +363,7 @@ def __(db: dbs.BigQueryDB, target_table: str, csv_format: bool = None, skip_head
 
     import uuid
     import datetime
+    from .bigquery import bigquery_credentials
 
     tmp_file_name = f'tmp-{datetime.datetime.now().isoformat()}-{uuid.uuid4().hex}.' + (
         'csv' if csv_format else 'json')
