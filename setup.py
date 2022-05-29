@@ -34,13 +34,18 @@ setup(
 
     extras_require={
         'test': ['pytest', 'pytest_click', 'pytest-docker', 'pytest-dependency', 'SQLAlchemy>=1.2.0'],
-        'mssql': ['pyodbc'],
+
+        # database requirements
         'bigquery':
             ['google-cloud-bigquery', # Google maintained bigquery client
              'google-cloud-bigquery-storage', # avoid warnigns in cursor contexts
              'pyarrow', # For pandas to bigquery
-             'pybigquery' # For BigQuery SQLAlchemy dialect
-        ]
+             'sqlalchemy-bigquery'
+        ],
+        'mssql': ['pyodbc'],
+        'mysql': ['mysqlclient'],
+        'postgres': ['psycopg2-binary>=2.7.3'],
+        'redshift': ['sqlalchemy-redshift'],
     },
 
     packages=find_packages(),
