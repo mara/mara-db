@@ -74,6 +74,12 @@ def __(db: dbs.RedshiftDB):
     return False
 
 
+@supports_extract_schema.register(dbs.BigQueryDB)
+def __(db: dbs.BigQueryDB):
+    # BigQuery does not support primary and foreign key relations
+    return False
+
+
 @supports_extract_schema.register(dbs.MysqlDB)
 def __(db: dbs.MysqlDB):
     return True
@@ -442,6 +448,9 @@ def draw_schema(db_alias: str, schemas: str):
 
     if db_alias not in config.databases():
         flask.abort(404, f'unkown database {db_alias}')
+
+    if not supports_extract_schema(db_alias):
+        flask.abort(404, f"could not extract schema for database {db_alias}")
 
     schema_names = schemas.split('/')
     hide_columns = flask.request.args.get('hide-columns')
