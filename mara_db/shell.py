@@ -188,6 +188,21 @@ def __(db: dbs.SQLiteDB, timezone: str = None, echo_queries: bool = None):
            + '  | sqlite3 -bail ' + shlex.quote(str(db.file_name))
 
 
+@query_command.register(dbs.SnowflakeDB)
+def __(db: dbs.SnowflakeDB, timezone: str = None, echo_queries: bool = None):
+    assert timezone is None, "unimplemented parameter for SnowflakeDB"
+    assert not echo_queries, "unimplemented parameter for SnowflakeDB"
+    return ((f'SNOWSQL_PWD={shlex.quote(db.password)} ' if db.password else '')
+            +(f'SNOWSQL_PRIVATE_KEY_PASSPHRASE={shlex.quote(db.private_key_passphrase)}' if db.private_key_passphrase else '')
+            + 'snowsql --noup'
+            +(f' -c {db.connection}' if db.connection else '')
+            +(f' -a {db.account}' if db.account else '')
+            +(f' -u {db.user}' if db.user else '')
+            +(f' --private-key-path {db.private_key_file}' if db.private_key_file else '')
+            +(f' -d {db.database}' if db.database else '')
+            +' -f /dev/stdin')
+
+
 # -------------------------------
 
 
@@ -320,6 +335,37 @@ def __(db: dbs.SQLiteDB, header: bool = None, footer: bool = None, delimiter_cha
     assert all(v is None for v in [footer, csv_format]), "unimplemented parameter for SQLiteDB"
     header_argument = '-noheader' if not header else ''
     return query_command(db) + " " + header_argument + f" -separator '{delimiter_char}' -quote"
+
+
+@copy_to_stdout_command.register(dbs.SnowflakeDB)
+def __(db: dbs.SnowflakeDB, header: bool = None, footer: bool = None, delimiter_char: str = None, csv_format: bool = None):
+    assert footer is None, "unimplemented parameter for SnowflakeDB"
+
+    if csv_format is None:
+        csv_format = True
+
+    if not csv_format:
+        raise ValueError('Not supported format: csv_format must be True or not set')
+
+    if not delimiter_char:
+        delimiter_char = ','
+
+    output_format = None
+    # https://docs.snowflake.com/en/user-guide/snowsql-config.html#output-format
+    if delimiter_char == ',':
+        output_format = 'csv'
+    elif delimiter_char == '\t':
+        output_format = 'tsv'
+    else:
+        raise ValueError(f"Not supported delimiter_char for SnowflakeDB: '{delimiter_char}'")
+
+    # possible other output_format, not implemented:
+    #   json = json array
+
+    # see also: https://docs.snowflake.com/en/user-guide/snowsql-use.html#exporting-data
+    return (query_command(db, echo_queries=False) + f' -o output_format={output_format} -o friendly=false -o timing=false'
+            +(f' -o header=true' if header else ' -o header=false'))
+
 
 
 # -------------------------------

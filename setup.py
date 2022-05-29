@@ -25,5 +25,8 @@ setup(
         'postgres': ['psycopg2-binary>=2.7.3'],
         'redshift': ['psycopg2-binary>=2.7.3',
                      'sqlalchemy-redshift'],
+        'snowflake': [
+            'snowflake-sqlalchemy'
+        ],
     }
 )
