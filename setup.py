@@ -44,6 +44,7 @@ setup(
     },
 
     packages=find_packages(),
+    package_data={'mara_db': ["*.js", "*.css", "*.css.map", "*.ico", "*.jpg", "*.png"]},
 
     author='Mara contributors',
     license='MIT',

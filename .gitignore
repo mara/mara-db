@@ -1,5 +1,22 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+build/
+dist/
 *.egg-info/
 .eggs/
-__pycache__
-.idea
+
+# Unit test / coverage reports
 .cache
+
+# Environments
+/.venv
+
+# Dev tools
+.idea
+
+# == Specific for this repository ==
+/tests/local_config.py
