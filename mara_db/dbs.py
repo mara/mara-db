@@ -23,6 +23,11 @@ class DB:
                              for var in vars(self) if getattr(self, var)])
                 + '>')
 
+    @property
+    def sqlalchemy_url(self):
+        """Returns the SQLAlchemy url for a database"""
+        raise NotImplementedError(f'Please implement sqlalchemy_url for type "{self.__class__.__name__}"')
+
 
 class PostgreSQLDB(DB):
     def __init__(self, host: str = None, port: int = None, database: str = None,
@@ -43,6 +48,11 @@ class PostgreSQLDB(DB):
         self.sslrootcert = sslrootcert
         self.sslcert = sslcert
         self.sslkey = sslkey
+
+    @property
+    def sqlalchemy_url(self):
+        return (f'postgresql+psycopg2://{self.user}{":" + self.password if self.password else ""}@{self.host}'
+                + f'{":" + str(self.port) if self.port else ""}/{self.database}')
 
 
 class RedshiftDB(PostgreSQLDB):
@@ -87,6 +97,15 @@ class BigQueryDB(DB):
         self.gcloud_gcs_bucket_name = gcloud_gcs_bucket_name
         self.use_legacy_sql = use_legacy_sql
 
+    @property
+    def sqlalchemy_url(self):
+        url = 'bigquery://'
+        if self.project:
+            url += self.project
+            if self.dataset:
+                url += '/' + self.dataset
+        return url
+
 
 class MysqlDB(DB):
     def __init__(self, host: str = None, port: int = None, database: str = None,
@@ -114,6 +133,12 @@ class SQLServerDB(DB):
         else:
             self.odbc_driver = odbc_driver
 
+    @property
+    def sqlalchemy_url(self):
+        port = self.port if self.port else 1433
+        driver = self.odbc_driver.replace(' ','+')
+        return f'mssql+pyodbc://{self.user}:{self.password}@{self.host}:{port}/{self.database}?driver={driver}'
+
 
 class OracleDB(DB):
     def __init__(self, host: str = None, port: int = 0, endpoint: str = None, user: str = None, password: str = None):
@@ -127,3 +152,7 @@ class OracleDB(DB):
 class SQLiteDB(DB):
     def __init__(self, file_name: pathlib.Path) -> None:
         self.file_name = file_name
+
+    @property
+    def sqlalchemy_url(self):
+        return f'sqlite:///{self.file_name}'

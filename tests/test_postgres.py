@@ -1,7 +1,6 @@
-import shlex
-from time import sleep
 import pytest
 import typing as t
+import sqlalchemy
 import subprocess
 import pathlib
 
@@ -16,17 +15,14 @@ POSTGRES_DATABASE = "mara"
 POSTGRES_PASSWORD = "mara"
 
 
-def postgres_is_responsive(host, port) -> bool:
+def db_is_responsive(db: dbs.DB) -> bool:
     """Returns True when Postgres is available on the given port, otherwise False"""
-    import socket
-    a_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    engine = sqlalchemy.create_engine(db.sqlalchemy_url, pool_pre_ping=True)
 
-    location = (host, port)
-    result_of_check = a_socket.connect_ex(location)
-    if result_of_check == 0:
-        a_socket.close()
-        return True
-    else:
+    try:
+        with engine.connect() as conn:
+            return True
+    except:
         return False
 
 
@@ -34,17 +30,15 @@ def postgres_is_responsive(host, port) -> bool:
 def postgres_db(docker_ip, docker_services) -> t.Tuple[str, int]:
     """Ensures that PostgreSQL server is running on docker."""
 
-    port = docker_services.port_for("postgres", 5432)
+    docker_port = docker_services.port_for("postgres", 5432)
+    db = dbs.PostgreSQLDB(host=docker_ip, port=docker_port, user=POSTGRES_USER, password=POSTGRES_PASSWORD, database=POSTGRES_DATABASE)
 
     # here we need to wait until the PostgreSQL port is available.
     docker_services.wait_until_responsive(
-        timeout=30.0, pause=0.1, check=lambda: postgres_is_responsive(docker_ip, port)
+        timeout=30.0, pause=0.1, check=lambda: db_is_responsive(db)
     )
-    # I don't why but the port check above seems not to work, so I just added a simple sleep
-    # of 7 seconds hoping that then everything is fine.
-    sleep(7)
 
-    return dbs.PostgreSQLDB(host=docker_ip, port=port, user=POSTGRES_USER, password=POSTGRES_PASSWORD, database=POSTGRES_DATABASE)
+    return db
 
 
 @pytest.mark.dependency()
