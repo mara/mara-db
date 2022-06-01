@@ -117,3 +117,19 @@ def test_postgres_shell_copy_from_stdin_csv_skipheader(postgres_db):
     (exitcode, pstdout) = subprocess.getstatusoutput(command)
     assert exitcode == 0
     assert pstdout == "Elinor Meklit"
+
+
+def test_postgres_sqlalchemy(postgres_db):
+    """
+    A simple test to check if the SQLAlchemy connection works
+    """
+    from mara_db.sqlalchemy_engine import engine
+    from sqlalchemy import select
+
+    eng = engine(postgres_db)
+
+    with eng.connect() as conn:
+        # run a SELECT 1.   use a core select() so that
+        # the SELECT of a scalar value without a table is
+        # appropriately formatted for the backend
+        assert conn.scalar(select([1])) == 1
