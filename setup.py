@@ -33,7 +33,7 @@ setup(
     include_package_data=True,
 
     extras_require={
-        'test': ['pytest', 'pytest_click'],
+        'test': ['pytest', 'pytest_click', 'pytest-docker', 'pytest-dependency', 'SQLAlchemy>=1.2.0'],
         'mssql': ['pyodbc'],
         'bigquery':
             ['google-cloud-bigquery', # Google maintained bigquery client
