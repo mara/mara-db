@@ -22,7 +22,8 @@ def sqlserver_cursor_context(db: typing.Union[str, mara_db.dbs.SQLServerDB]) -> 
     if db.port: # connecting via TCP/IP port
         server = f"{server},{db.port}"
 
-    connection = pyodbc.connect(f"DRIVER={{{db.odbc_driver}}};SERVER={server};DATABASE={db.database};UID={db.user};PWD={db.password}")
+    connection = pyodbc.connect(f"DRIVER={{{db.odbc_driver}}};SERVER={server};DATABASE={db.database};UID={db.user};PWD={db.password}" \
+                                + (';Encrypt=YES;TrustServerCertificate=YES' if db.trust_server_certificate else ''))
     try:
         cursor = connection.cursor()
         yield cursor
