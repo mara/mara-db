@@ -58,6 +58,39 @@ def test_mssql_sqlalchemy(mssql_db):
 # Tests specific to sqsh
 """
 
+@pytest.fixture(scope="session")
+def mssql_sqsh_db(docker_ip, docker_services) -> t.Tuple[str, int]:
+    """Ensures that SQL Server server is running on docker."""
+
+    docker_port = docker_services.port_for("mssql", 1433)
+    db = db_replace_placeholders(MSSQL_SQSH_DB, docker_ip, docker_port)
+
+    # here we need to wait until the SQL Server port is available.
+    docker_services.wait_until_responsive(
+        timeout=30.0, pause=0.1, check=lambda: db_is_responsive(db)
+    )
+
+    return db
+
+
+@pytest.mark.dependency()
+def test_mssql_sqsh_shell_query_command(mssql_sqsh_db):
+    command = execute_sql_statement_command(mssql_sqsh_db, "SELECT 1")
+    (exitcode, pstdout) = subprocess.getstatusoutput(command)
+    print(pstdout)
+    assert exitcode == 0
+
+
+@pytest.mark.dependency()
+def test_mssql_sqsh_shell_copy_to_stout(mssql_sqsh_db):
+    command = execute_sql_statement_to_stdout_csv_command(mssql_sqsh_db, "SELECT 1 AS Col1, 'FOO' AS Col2 UNION ALL SELECT 2, 'BAR'")
+    (exitcode, pstdout) = subprocess.getstatusoutput(command)
+    print(pstdout)
+    assert exitcode == 0
+    assert pstdout == '''Col1,Col2
+1,"FOO"
+2,"BAR"'''
+
 
 
 """

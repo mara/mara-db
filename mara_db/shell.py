@@ -124,6 +124,7 @@ def __(db: dbs.SqshSQLServerDB, timezone: str = None, echo_queries: bool = None)
             + (f' -U {db.user}' if db.user else '')
             + (f' -P {db.password}' if db.password else '')
             + (f' -S {db.host}' if db.host else '')
+            + (f':{db.port}' if db.host and db.port and db.port != 1433 else '')
             + (f' -D {db.database}' if db.database else '')
             + (f' -e' if echo_queries else ''))
 
@@ -273,9 +274,11 @@ def __(db: dbs.MysqlDB, header: bool = None, footer: bool = None, delimiter_char
 @copy_to_stdout_command.register(dbs.SqshSQLServerDB)
 def __(db: dbs.SqshSQLServerDB, header: bool = None, footer: bool = None, delimiter_char: str = None,
        csv_format: bool = None):
-    assert all(v is None for v in [header, footer, delimiter_char]), "unimplemented parameter for SqshSQLServerDB"
+    assert all(v is None for v in [header, footer]), "unimplemented parameter for SqshSQLServerDB"
     if csv_format == False:
         raise ValueError(f'For SqshSQLServerDB csv_format must be True or not set')
+    if delimiter_char and delimiter_char != ',':
+        raise ValueError(f"For SqshSQLServerDB delimiter_char must ','")
     return query_command(db, echo_queries=False) + " -m csv"
 
 
@@ -624,7 +627,7 @@ def __(source_db: dbs.SQLServerDB, target_db: dbs.PostgreSQLDB, target_table: st
                                                skip_header=True, timezone=timezone))
 
 
-@copy_command.register(dbs.SQLServerDB, dbs.BigQueryDB)
+@copy_command.register(dbs.SqshSQLServerDB, dbs.BigQueryDB)
 def __(source_db: dbs.SQLServerDB, target_db: dbs.PostgreSQLDB, target_table: str,
        timezone: str = None, csv_format: bool = None, delimiter_char: str = None):
     if csv_format is None:
