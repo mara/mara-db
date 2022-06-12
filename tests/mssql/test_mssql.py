@@ -10,6 +10,10 @@ from ..db_test_helper import db_is_responsive, db_replace_placeholders
 from ..local_config import MSSQL_DB, MSSQL_SQSH_DB, MSSQL_SQLCMD_DB
 
 
+if not MSSQL_DB:
+    pytest.skip("skipping SQLServerDB tests: variable MSSQL_DB not set", allow_module_level=True)
+
+
 @pytest.fixture(scope="session")
 def mssql_db(docker_ip, docker_services) -> t.Tuple[str, int]:
     """Ensures that SQL Server server is running on docker."""

@@ -10,6 +10,10 @@ from ..db_test_helper import db_is_responsive, db_replace_placeholders
 from ..local_config import POSTGRES_DB
 
 
+if not POSTGRES_DB:
+    pytest.skip("skipping PostgreSQL tests: variable POSTGRES_DB not set", allow_module_level=True)
+
+
 @pytest.fixture(scope="session")
 def postgres_db(docker_ip, docker_services) -> t.Tuple[str, int]:
     """Ensures that PostgreSQL server is running on docker."""
