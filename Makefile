@@ -26,7 +26,7 @@ test:
 
 clean:
 	# clean up
-	rm -rf .venv/ build/ dist/ ${MODULE_NAME}.egg-info/ .pytest_cache/
+	rm -rf .venv/ build/ dist/ ${MODULE_NAME}.egg-info/ .pytest_cache/ .eggs/
 
 
 .PYTHON3:=$(shell PATH='$(subst $(CURDIR)/.venv/bin:,,$(PATH))' which python3)
