@@ -189,3 +189,11 @@ By default, files will directly loaded locally as described in [loading-local-da
 
 A BigQuery context with a python cursor is also available on demand for easy access to BigQuery databases.
 In order to use, install the official Google python client library: [google-cloud-bigquery](https://cloud.google.com/bigquery/docs/reference/libraries#client-libraries-install-python).
+
+## Links
+
+* Documentation: https://mara-db.readthedocs.io/
+* Changes: https://mara-db.readthedocs.io/en/latest/changes.html
+* PyPI Releases: https://pypi.org/project/mara-db/
+* Source Code: https://github.com/mara/mara-db
+* Issue Tracker: https://github.com/mara/mara-db/issues
