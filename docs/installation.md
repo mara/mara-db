@@ -48,7 +48,7 @@ or
 $ pip install git+https://github.com/mara/mara-db.git
 ```
 
-```{note} Using extras
+```{note}
 For most of the database engines additional python packages are required which can be installed via extras.
 
 For example, for PostgreSQL use
