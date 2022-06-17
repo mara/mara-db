@@ -1,7 +1,7 @@
 # Mara DB
 
-[![mara-db](https://github.com/mara/mara-db/actions/workflows/build.yml/badge.svg)](https://github.com/mara/mara-db/actions/workflows/build.yml)
-[![PyPI - License](https://img.shields.io/pypi/l/mara-db.svg)](https://github.com/mara/mara-db/blob/master/LICENSE)
+[![Build Status](https://github.com/mara/mara-db/actions/workflows/build.yml/badge.svg)](https://github.com/mara/mara-db/actions/workflows/build.yml)
+[![PyPI - License](https://img.shields.io/pypi/l/mara-db.svg)](https://github.com/mara/mara-db/blob/main/LICENSE)
 [![PyPI version](https://badge.fury.io/py/mara-db.svg)](https://badge.fury.io/py/mara-db)
 [![Slack Status](https://img.shields.io/badge/slack-join_chat-white.svg?logo=slack&style=social)](https://communityinviter.com/apps/mara-users/public-invite)
 
