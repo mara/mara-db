@@ -7,7 +7,7 @@
 
 Mini package for configuring and accessing multiple databases in a single project. Decouples the use of databases and their configuration by using "aliases" for databases.
  
-The file [mara_db/dbs.py](mara_db/dbs.py) contains abstract database configurations for PostgreSQL, Mysql, SQL Server, Oracle, SQLite and Big Query. The database connections of a project are configured by overwriting the `databases` function in [mara_db/config.py](mara_db/config.py):
+The file [mara_db/dbs.py](https://github.com/mara/mara-db/blob/main/mara_db/dbs.py) contains abstract database configurations for PostgreSQL, Mysql, SQL Server, Oracle, SQLite and Big Query. The database connections of a project are configured by overwriting the `databases` function in [mara_db/config.py](https://github.com/mara/mara-db/blob/main/mara_db/config.py):
 
 ```python
 import mara_db.config
@@ -31,10 +31,10 @@ print(mara_db.dbs.db('mara'))
 
 ## Visualization of (PostgreSQL, MySQL, SQL Server) database schemas 
 
-[mara_db/views.py](mara_db/views.py) contains a schema visualization for all configured databases using graphviz (currently PostgreSQL, Mysql and SQL Server only). It basically show tables of selected schemas together with the foreign key relations between them. 
+[mara_db/views.py](https://github.com/mara/mara-db/blob/main/mara_db/views.py) contains a schema visualization for all configured databases using graphviz (currently PostgreSQL, Mysql and SQL Server only). It basically show tables of selected schemas together with the foreign key relations between them. 
 
 
-![Schema visualization](docs/schema-visualization.png)
+![Schema visualization](https://github.com/mara/mara-db/blob/main/docs/schema-visualization.png)
 
 For finding missing foreign key constraints, columns that follow a specific naming pattern (configurable via `config.schema_ui_foreign_key_column_regex`, default `*_fk`) and that are not part of foreign key constraints are drawn in pink.    
 
@@ -43,7 +43,7 @@ For finding missing foreign key constraints, columns that follow a specific nami
 
 ## Fast batch processing: Accessing databases with shell commands
 
-The file [mara_db/shell.py](mara_db/shell.py) contains functions that create commands for accessing databases via their command line clients. 
+The file [mara_db/shell.py](https://github.com/mara/mara-db/blob/main/mara_db/shell.py) contains functions that create commands for accessing databases via their command line clients. 
    
 For example, the `query_command` function creates a shell command that can receive an SQL query from stdin and execute it:
 
@@ -101,7 +101,7 @@ The following **command line clients** are used to access the various databases:
 
 ## Make it so! Auto-migration of SQLAlchemy models
 
-[Alembic has a feature](http://alembic.zzzcomputing.com/en/latest/autogenerate.html) that can create a diff between the state of a database and the ORM models of an application. This feature is used in [mara_db/auto_migrate.py](mara_db/auto_migrate.py) to automatically perform all necessary database transformations, without intermediate migration files:
+[Alembic has a feature](http://alembic.zzzcomputing.com/en/latest/autogenerate.html) that can create a diff between the state of a database and the ORM models of an application. This feature is used in [mara_db/auto_migrate.py](https://github.com/mara/mara-db/blob/main/mara_db/auto_migrate.py) to automatically perform all necessary database transformations, without intermediate migration files:
 
 ```python
 # define a model / table

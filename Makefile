@@ -7,26 +7,22 @@ all:
 	make install
 
 
-setup-venv:
-	python3 -m venv .venv
-	.venv/bin/pip install --upgrade pip
-	pip install ".[test]"
-
-
 install:
 	# install of module
-	.venv/bin/python setup.py install
+	.venv/bin/pip install .
 
 
 test:
+	make .venv/bin/python
 	# test of module
 	.venv/bin/pip install .[test]
 	make tests/local_config.py
 	.venv/bin/pytest
 
+
 clean:
 	# clean up
-	rm -rf .venv/ build/ dist/ ${MODULE_NAME}.egg-info/ .pytest_cache/
+	rm -rf .venv/ build/ dist/ ${MODULE_NAME}.egg-info/ .pytest_cache/ .eggs/
 
 
 .PYTHON3:=$(shell PATH='$(subst $(CURDIR)/.venv/bin:,,$(PATH))' which python3)
