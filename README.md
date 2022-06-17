@@ -34,7 +34,7 @@ print(mara_db.dbs.db('mara'))
 [mara_db/views.py](https://github.com/mara/mara-db/blob/main/mara_db/views.py) contains a schema visualization for all configured databases using graphviz (currently PostgreSQL, Mysql and SQL Server only). It basically show tables of selected schemas together with the foreign key relations between them. 
 
 
-![Schema visualization](https://github.com/mara/mara-db/blob/main/docs/schema-visualization.png)
+![Schema visualization](https://github.com/mara/mara-db/blob/main/docs/_static/schema-visualization.png)
 
 For finding missing foreign key constraints, columns that follow a specific naming pattern (configurable via `config.schema_ui_foreign_key_column_regex`, default `*_fk`) and that are not part of foreign key constraints are drawn in pink.    
 
