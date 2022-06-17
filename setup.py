@@ -23,6 +23,7 @@ setup(
         'mssql': ['pyodbc'],
         'mysql': ['mysqlclient'],
         'postgres': ['psycopg2-binary>=2.7.3'],
-        'redshift': ['sqlalchemy-redshift'],
+        'redshift': ['psycopg2-binary>=2.7.3',
+                     'sqlalchemy-redshift'],
     }
 )
