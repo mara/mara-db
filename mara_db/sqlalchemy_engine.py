@@ -17,7 +17,7 @@ def engine(db: object) -> sqlalchemy.engine.Engine:
     Returns:
         The generated sqlalchemy engine
 
-    Examples:
+    Example:
         >>> print(engine('mara'))
         Engine(postgresql+psycopg2://None@localhost/mara)
     """

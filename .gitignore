@@ -12,6 +12,9 @@ dist/
 # Unit test / coverage reports
 .cache
 
+# Sphinx documentation
+docs/_build/
+
 # Environments
 /.venv
 

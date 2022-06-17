@@ -25,7 +25,7 @@ def query_command(db: object, timezone: str = None, echo_queries: bool = None) -
     Returns:
         A shell command string
 
-    Example:
+    Examples:
         >>> print(query_command('mara', 'America/New_York'))
         PGTZ=America/New_York PGOPTIONS=--client-min-messages=warning psql --username=root --host=localhost \
             --echo-all --no-psqlrc --set ON_ERROR_STOP=on mara
@@ -289,8 +289,8 @@ def copy_from_stdin_command(db: object, target_table: str,
     Returns:
         The composed shell command
 
-    Examples:
-        >>>> print(copy_from_stdin_command('mara', target_table='foo'))
+    Example:
+        >>> print(copy_from_stdin_command('mara', target_table='foo'))
         PGTZ=Europe/Berlin PGOPTIONS=--client-min-messages=warning psql --username=root --host=localhost \
             --echo-all --no-psqlrc --set ON_ERROR_STOP=on mara \
             --command="COPY foo FROM STDIN WITH CSV"
@@ -427,8 +427,8 @@ def copy_command(source_db: object, target_db: object, target_table: str,
     Returns:
         A shell command string
 
-    Examples:
-        >>>> print(copy_command(dbs.SQLServerDB(database='source_db'), dbs.PostgreSQLDB(database='target_db'), \
+    Example:
+        >>> print(copy_command(dbs.SQLServerDB(database='source_db'), dbs.PostgreSQLDB(database='target_db'), \
                                 'target_table'))
         sqsh  -D source_db -m csv \
           | PGTZ=Europe/Berlin PGOPTIONS=--client-min-messages=warning psql --echo-all --no-psqlrc \
