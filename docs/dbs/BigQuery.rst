@@ -25,7 +25,7 @@ One time authentication of the service-account used:
 
 .. code-block:: bash
 
-    gcloud auth activate-service-account --key-file='path-to/service-account.json'
+    $ gcloud auth activate-service-account --key-file='path-to/service-account.json'
 
 To read from STDIN an additional Google Cloud Storage bucket is required as temp storage.
 

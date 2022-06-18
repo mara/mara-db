@@ -8,6 +8,9 @@ Installation
 
 There are no special requirements for SQLite since it is already included in python.
 
+The shell command `sqlite3` is required. This is available in standard distributions.
+Version >3.20.x required (not the case on Ubuntu 14.04).
+
 
 Configuration examples
 ----------------------

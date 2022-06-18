@@ -9,7 +9,7 @@ Use extras `mysql` to install all required packages.
 
 .. code-block:: shell
 
-     pip install mara-db[mysql]
+    $ pip install mara-db[mysql]
 
 
 Configuration examples
