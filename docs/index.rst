@@ -36,6 +36,7 @@ This part of the documentation focuses on step-by-step instructions how to use t
    :maxdepth: 2
 
    installation
+   config
 
 
 Databases

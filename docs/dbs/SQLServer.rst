@@ -26,6 +26,10 @@ Use extras `mssql` to install all required packages.
 
     $ pip install mara-db[mssql]
 
+This module uses thq `sqsh` shell tool which you can install from https://sourceforge.net/projects/sqsh/. Usually messy to get working.
+On ubuntu, use http://ppa.launchpad.net/jasc/sqsh/ubuntu/ backport. On Mac, try the homebrew version or install from source.
+
+
 Configuration examples
 ----------------------
 
