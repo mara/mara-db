@@ -53,7 +53,7 @@ For most of the database engines additional python packages are required which c
 
 For example, for PostgreSQL use
 
-``$ pip install mara-db``
+``$ pip install mara-db[postgres]``
 
 to make sure all additional required packages are installed.
 ```
