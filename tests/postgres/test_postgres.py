@@ -1,29 +1,17 @@
 import pytest
 import typing as t
-import sqlalchemy
 import subprocess
 import pathlib
 
-from mara_db import dbs, shell
+from mara_db import shell
 
-from .command_helper import *
-
-
-# the configured parameters in docker
-POSTGRES_USER = "mara"
-POSTGRES_DATABASE = "mara"
-POSTGRES_PASSWORD = "mara"
+from ..command_helper import *
+from ..db_test_helper import db_is_responsive, db_replace_placeholders
+from ..local_config import POSTGRES_DB
 
 
-def db_is_responsive(db: dbs.DB) -> bool:
-    """Returns True when Postgres is available on the given port, otherwise False"""
-    engine = sqlalchemy.create_engine(db.sqlalchemy_url, pool_pre_ping=True)
-
-    try:
-        with engine.connect() as conn:
-            return True
-    except:
-        return False
+if not POSTGRES_DB:
+    pytest.skip("skipping PostgreSQL tests: variable POSTGRES_DB not set", allow_module_level=True)
 
 
 @pytest.fixture(scope="session")
@@ -31,7 +19,7 @@ def postgres_db(docker_ip, docker_services) -> t.Tuple[str, int]:
     """Ensures that PostgreSQL server is running on docker."""
 
     docker_port = docker_services.port_for("postgres", 5432)
-    db = dbs.PostgreSQLDB(host=docker_ip, port=docker_port, user=POSTGRES_USER, password=POSTGRES_PASSWORD, database=POSTGRES_DATABASE)
+    db = db_replace_placeholders(POSTGRES_DB, docker_ip, docker_port)
 
     # here we need to wait until the PostgreSQL port is available.
     docker_services.wait_until_responsive(
@@ -63,16 +51,35 @@ def test_postgres_shell_copy_to_stout(postgres_db):
 def test_postgres_ddl(postgres_db):
     """Creates DDL scripts required for other tests"""
     # run 'test_postgres_ddl.sql'
-    test_postgres_ddl_file_path = str((pathlib.Path(__file__).parent / 'test_postgres_ddl.sql').absolute())
-    command = execute_sql_file_command(postgres_db, test_postgres_ddl_file_path)
+    ddl_file_path = str((pathlib.Path(__file__).parent / 'test_postgres_ddl.sql').absolute())
+    command = execute_sql_file_command(postgres_db, ddl_file_path)
     (exitcode, pstdout) = subprocess.getstatusoutput(command)
     print(pstdout)
     assert exitcode == 0
 
+
 @pytest.mark.dependency(depends=["test_postgres_shell_query_command", "test_postgres_shell_copy_to_stout", "test_postgres_ddl"])
-def test_postgres_shell_copy_from_stdin_csv_noheader(postgres_db):
+@pytest.mark.parametrize(
+    "seed_file",
+    [
+        "names_crlf_lastrow.csv",
+        "names_crlf_quoted_lastrow.csv",
+        "names_crlf_quoted.csv",
+        "names_crlf.csv",
+        "names_lf_lastrow.csv",
+        "names_lf_quoted_lastrow.csv",
+        "names_lf_quoted.csv",
+        "names_lf.csv",
+    ]
+)
+def test_postgres_shell_copy_from_stdin_csv_noheader(postgres_db, seed_file):
+    # delete rows from table, make sure that the last matrix test does not mess up this test
+    command = execute_sql_statement_to_stdout_csv_command(postgres_db, "DELETE FROM names")
+    (exitcode, pstdout) = subprocess.getstatusoutput(command)
+    assert exitcode == 0
+
     # reading csv file...
-    names_csv_file_path = str((pathlib.Path(__file__).parent / 'names.csv').absolute())
+    names_csv_file_path = str((pathlib.Path(__file__).parent / f'../seed/{seed_file}').absolute())
     command = f'cat {names_csv_file_path} \\\n'
     command += '  | ' + shell.copy_from_stdin_command(postgres_db,target_table='names',csv_format=True,skip_header=False,delimiter_char=',')
     print(command)
@@ -95,9 +102,27 @@ def test_postgres_shell_copy_from_stdin_csv_noheader(postgres_db):
 
 
 @pytest.mark.dependency(depends=["test_postgres_shell_query_command", "test_postgres_shell_copy_to_stout", "test_postgres_ddl"])
-def test_postgres_shell_copy_from_stdin_csv_skipheader(postgres_db):
+@pytest.mark.parametrize(
+    "seed_file",
+    [
+        "names_crlf_lastrow_header.csv",
+        "names_crlf_quoted_lastrow_header.csv",
+        "names_crlf_quoted_header.csv",
+        "names_crlf_header.csv",
+        "names_lf_lastrow_header.csv",
+        "names_lf_quoted_lastrow_header.csv",
+        "names_lf_quoted_header.csv",
+        "names_lf_header.csv",
+    ]
+)
+def test_postgres_shell_copy_from_stdin_csv_skipheader(postgres_db, seed_file):
+    # delete rows from table, make sure that the last matrix test does not mess up this test
+    command = execute_sql_statement_to_stdout_csv_command(postgres_db, "DELETE FROM names_with_header")
+    (exitcode, pstdout) = subprocess.getstatusoutput(command)
+    assert exitcode == 0
+
     # reading csv file...
-    names_csv_file_path = str((pathlib.Path(__file__).parent / 'names_header.csv').absolute())
+    names_csv_file_path = str((pathlib.Path(__file__).parent / f'../seed/{seed_file}').absolute())
     command = f'cat {names_csv_file_path} \\\n'
     command += '  | ' + shell.copy_from_stdin_command(postgres_db,target_table='names_with_header',csv_format=True,skip_header=True,delimiter_char=',')
     print(command)
@@ -123,13 +148,5 @@ def test_postgres_sqlalchemy(postgres_db):
     """
     A simple test to check if the SQLAlchemy connection works
     """
-    from mara_db.sqlalchemy_engine import engine
-    from sqlalchemy import select
-
-    eng = engine(postgres_db)
-
-    with eng.connect() as conn:
-        # run a SELECT 1.   use a core select() so that
-        # the SELECT of a scalar value without a table is
-        # appropriately formatted for the backend
-        assert conn.scalar(select([1])) == 1
+    from ..db_test_helper import _test_sqlalchemy
+    _test_sqlalchemy(postgres_db)

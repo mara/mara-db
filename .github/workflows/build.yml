@@ -30,4 +30,5 @@ jobs:
           echo Finished successful build with Python $pythonversion
       - name: Test with pytest
         run: |
+          make tests/local_config.py
           pytest -v tests

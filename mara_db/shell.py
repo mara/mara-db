@@ -109,9 +109,9 @@ def __(db: dbs.MysqlDB, timezone: str = None, echo_queries: bool = None):
             + (f' {db.database}' if db.database else ''))
 
 
-@query_command.register(dbs.SQLServerDB)
-def __(db: dbs.SQLServerDB, timezone: str = None, echo_queries: bool = None):
-    assert all(v is None for v in [timezone]), "unimplemented parameter for SQLServerDB"
+@query_command.register(dbs.SqshSQLServerDB)
+def __(db: dbs.SqshSQLServerDB, timezone: str = None, echo_queries: bool = None):
+    assert timezone is None, "unimplemented parameter for SqshSQLServerDB"
 
     if echo_queries is None:
         echo_queries = config.default_echo_queries()
@@ -124,8 +124,45 @@ def __(db: dbs.SQLServerDB, timezone: str = None, echo_queries: bool = None):
             + (f' -U {db.user}' if db.user else '')
             + (f' -P {db.password}' if db.password else '')
             + (f' -S {db.host}' if db.host else '')
+            + (f':{db.port}' if db.host and db.port and db.port != 1433 else '')
             + (f' -D {db.database}' if db.database else '')
             + (f' -e' if echo_queries else ''))
+
+
+@query_command.register(dbs.SqlcmdSQLServerDB)
+def __(db: dbs.SqlcmdSQLServerDB, timezone: str = None, echo_queries: bool = None):
+    assert timezone is None, "unimplemented parameter for SQLServerDB"
+
+    if echo_queries is None:
+        echo_queries = config.default_echo_queries()
+
+    if db.host:
+        # connection to DB, see: https://docs.microsoft.com/en-us/sql/ssms/scripting/sqlcmd-connect-to-the-database-engine?view=sql-server-ver15
+        if db.protocol == 'tcp':
+            port = db.port if db.port else 1433
+            server = f'tcp:{db.host},{port}'
+        elif db.protocol == 'np':
+            pipe = f'MSSQL${db.instance}\\sql\\query' if db.instance else 'pipe\\sql\\query'
+            server = f'np:\\\\{db.host}\\{pipe}'
+        elif db.protocol == 'lpc':
+            server = f'lcp:{db.host}\\{db.instance}' if db.instance else f'lcp:{db.host}'
+        else:
+            if db.instance:
+                server = f'{db.host}\\{db.instance}'
+            elif db.port:
+                server = f'{db.host},{db.port}'
+            else:
+                server = db.host
+
+    return ('sqlcmd -b -r'
+            + (f' -U {db.user}' if db.user else '')
+            + (f' -P {db.password}' if db.password else '')
+            + (f' -S {server}' if server else '')
+            + (' -C' if db.trust_server_certificate else '')
+            + (f' -d {db.database}' if db.database else '')
+            + (' -e' if echo_queries else '')
+            + (' -I' if db.quoted_identifier else '')
+            + (' -i /dev/stdin'))
 
 
 @query_command.register(dbs.OracleDB)
@@ -234,12 +271,35 @@ def __(db: dbs.MysqlDB, header: bool = None, footer: bool = None, delimiter_char
     return query_command(db) + ' ' + header_argument
 
 
-@copy_to_stdout_command.register(dbs.SQLServerDB)
-def __(db: dbs.SQLServerDB, header: bool = None, footer: bool = None, delimiter_char: str = None,
+@copy_to_stdout_command.register(dbs.SqshSQLServerDB)
+def __(db: dbs.SqshSQLServerDB, header: bool = None, footer: bool = None, delimiter_char: str = None,
        csv_format: bool = None):
-    assert all(
-        v is None for v in [header, footer, delimiter_char, csv_format]), "unimplemented parameter for SQLServerDB"
+    assert all(v is None for v in [header, footer]), "unimplemented parameter for SqshSQLServerDB"
+    if csv_format == False:
+        raise ValueError(f'For SqshSQLServerDB csv_format must be True or not set')
+    if delimiter_char and delimiter_char != ',':
+        raise ValueError(f"For SqshSQLServerDB delimiter_char must ','")
     return query_command(db, echo_queries=False) + " -m csv"
+
+
+@copy_to_stdout_command.register(dbs.SqlcmdSQLServerDB)
+def __(db: dbs.SqlcmdSQLServerDB, header: bool = None, footer: bool = None, delimiter_char: str = None,
+       csv_format: bool = None):
+    assert footer is None, "unimplemented parameter for SqlcmdSQLServerDB"
+    if csv_format == False:
+        raise ValueError(f'For SqlcmdSQLServerDB csv_format must be True or not set')
+
+    # manipulate the SQL query
+    command = "(echo 'SET NOCOUNT ON\n' && cat) \\\n  | "
+    command += "(echo 'GO\n' && cat) \\\n  | "
+
+    return (command + query_command(db, echo_queries=False)
+            + ' -W'
+            + (f' "-s{delimiter_char}"' if delimiter_char else ' -s,')
+            + (f' -h-1' if not header else '')
+            + (f' -w 65535') # see https://docs.microsoft.com/en-us/sql/tools/sqlcmd-utility?view=sql-server-ver15, is used to avoid line-break when output is longer then 80 characters
+            # removes the dashed line between header and data rows
+            + (" | sed -e '2d'" if header else ''))
 
 
 @copy_to_stdout_command.register(dbs.OracleDB)
@@ -403,6 +463,55 @@ def __(db: dbs.BigQueryDB, target_table: str, csv_format: bool = None, skip_head
            + gcs_delete_temp_file_command
 
 
+@copy_from_stdin_command.register(dbs.SqlcmdSQLServerDB)
+def __(db: dbs.SqlcmdSQLServerDB, target_table: str, csv_format: bool = None, skip_header: bool = None,
+       delimiter_char: str = None, quote_char: str = None, null_value_string: str = None, timezone: str = None):
+    assert all(v is None for v in [quote_char, timezone]), "unimplemented parameter for SqlcmdSQLServerDB"
+    if null_value_string is not None and null_value_string != '':
+        raise ValueError("The parameter null_value_string must be None or an empty string ('') when the db_alias referres to a SQL Server (SqlcmdSQLServerDB)")
+    if csv_format == False:
+        raise ValueError('The parameter csv_format must be true or none when the db_alias referres to a SQL Server (SqlcmdSQLServerDB)')
+
+    if not delimiter_char:
+        delimiter_char = ','
+
+    if db.host:
+        # connection to DB, see: https://docs.microsoft.com/en-us/sql/ssms/scripting/sqlcmd-connect-to-the-database-engine?view=sql-server-ver15
+        if db.protocol == 'tcp':
+            port = db.port if db.port else 1433
+            server = f'tcp:{db.host},{port}'
+        elif db.protocol == 'np':
+            pipe = f'MSSQL${db.instance}\\sql\\query' if db.instance else 'pipe\\sql\\query'
+            server = f'np:\\\\{db.host}\\{pipe}'
+        elif db.protocol == 'lpc':
+            server = f'lcp:{db.host}\\{db.instance}' if db.instance else f'lcp:{db.host}'
+        else:
+            if db.instance:
+                server = f'{db.host}\\{db.instance}'
+            elif db.port:
+                server = f'{db.host},{db.port}'
+            else:
+                server = db.host
+
+    return ('{ '
+            # create a temporary file for stdin; bcp does not support stdin by default
+            + 'TEMP_STDIN="$(mktemp)"; '
+            # transforms CRLF to LF and saves stdin; bcp uses LF in unix systems by default
+            + 'cat - | sed "s/\\r$//g" > "${TEMP_STDIN}"; '
+            + f'bcp {target_table} in "${{TEMP_STDIN}}"'
+            + (f' -U {db.user}' if db.user else '')
+            + (f' -P {db.password}' if db.password else '')
+            + (f' -S {server}' if server else '')
+            + (' -u' if db.trust_server_certificate else '')
+            + (f' -d {db.database}' if db.database else '')
+            + ' -c'
+            + (f' -t {delimiter_char}' if delimiter_char != '\t' else '')
+            + (' -F2' if skip_header else '')
+            # removes the temporary file
+            + f'; rm -f "${{TEMP_STDIN}}" > /dev/null; '
+            + '}')
+
+
 # -------------------------------
 
 
@@ -518,7 +627,7 @@ def __(source_db: dbs.SQLServerDB, target_db: dbs.PostgreSQLDB, target_table: st
                                                skip_header=True, timezone=timezone))
 
 
-@copy_command.register(dbs.SQLServerDB, dbs.BigQueryDB)
+@copy_command.register(dbs.SqshSQLServerDB, dbs.BigQueryDB)
 def __(source_db: dbs.SQLServerDB, target_db: dbs.PostgreSQLDB, target_table: str,
        timezone: str = None, csv_format: bool = None, delimiter_char: str = None):
     if csv_format is None:
@@ -527,6 +636,17 @@ def __(source_db: dbs.SQLServerDB, target_db: dbs.PostgreSQLDB, target_table: st
             + '  | ' + copy_from_stdin_command(target_db, target_table=target_table, csv_format=csv_format,
                                                delimiter_char=delimiter_char,
                                                skip_header=True, timezone=timezone))
+
+
+@copy_command.register(dbs.SqlcmdSQLServerDB, dbs.BigQueryDB)
+def __(source_db: dbs.SqlcmdSQLServerDB, target_db: dbs.PostgreSQLDB, target_table: str,
+       timezone: str = None, csv_format: bool = None, delimiter_char: str = None):
+    if csv_format is None:
+        csv_format = True
+    return (copy_to_stdout_command(source_db) + ' \\\n'
+            + '  | ' + copy_from_stdin_command(target_db, target_table=target_table, csv_format=csv_format,
+                                               delimiter_char=delimiter_char,
+                                               null_value_string='NULL', skip_header=True))
 
 
 @copy_command.register(dbs.OracleDB, dbs.PostgreSQLDB)

@@ -120,9 +120,25 @@ class MysqlDB(DB):
 
 
 class SQLServerDB(DB):
+    def __new__(cls, host: str = None, port: int = None, database: str = None,
+                 user: str = None, password: str = None, odbc_driver: str = None,
+                 **kargs):
+        """
+        Connection information for a SQL Server database
+        """
+        if cls is SQLServerDB:
+            # Here we define what happens when the class is directly created in code
+            # 
+            # We defined here that class SqshSQLServerDB shall be used by default. In a newer
+            # major version we could change this to SqlcmdSQLServerDB but we do not want to
+            # introduce a breaking change here at this point.
+            return SqshSQLServerDB(host=host, port=port, database=database, user=user, password=password, odbc_driver=odbc_driver)
+        else:
+            # This is called when the class is created from a derived class (e.g. SqshSQLServerDB)
+            return super(SQLServerDB, cls).__new__(cls)
+
     def __init__(self, host: str = None, port: int = None, database: str = None,
                  user: str = None, password: str = None, odbc_driver: str = None):
-        # NOTE: The support for named instances is not added because the command `sqsh` does not support it
         self.host = host
         self.port = port
         self.database = database
@@ -135,10 +151,54 @@ class SQLServerDB(DB):
 
     @property
     def sqlalchemy_url(self):
+        import urllib
         port = self.port if self.port else 1433
         driver = self.odbc_driver.replace(' ','+')
-        return f'mssql+pyodbc://{self.user}:{self.password}@{self.host}:{port}/{self.database}?driver={driver}'
+        return f'mssql+pyodbc://{self.user}:{urllib.parse.quote(self.password)}@{self.host}:{port}/{self.database}?driver={driver}'
 
+
+class SqshSQLServerDB(SQLServerDB):
+    def __init__(self, host: str = None, port: int = None, database: str = None,
+                 user: str = None, password: str = None, odbc_driver: str = None):
+        """
+        Connection information for a SQL Server database using the unix package sqsh
+        """
+        # NOTE: The support for named instances is not added because the command `sqsh` does not support it
+        super().__init__(host=host, port=port, database=database, user=user, password=password, odbc_driver=odbc_driver)
+
+
+class SqlcmdSQLServerDB(SQLServerDB):
+    def __init__(self, host: str = None, instance: str = None, port: int = None, database: str = None,
+                 user: str = None, password: str = None, odbc_driver: str = None,
+                 protocol: str = None, quoted_identifier: bool = True,
+                 trust_server_certificate: bool = False):
+        """
+        Connection information for a SQL Server database using the MSSQL Tools e.g. sqlcmd
+
+        Args:
+            quoted_identifier: If set to true, the SET option QUOTED_IDENTIFIER is set to ON, otherwise OFF.
+            protocol: can be tcp (TCP/IP connection), np (named pipe) or lcp (using shared memory). See as well: https://docs.microsoft.com/en-us/sql/ssms/scripting/sqlcmd-connect-to-the-database-engine?view=sql-server-ver15
+            trust_server_certificate: Trust the server certificate without validation
+        """
+        super().__init__(host=host, port=port, database=database, user=user, password=password, odbc_driver=odbc_driver)
+        if protocol:
+            if protocol not in ['tcp','np','lpc']:
+                raise ValueError(f'Not supported protocol: {protocol}')
+            if protocol == 'tcp' and instance:
+                raise ValueError(f'You can not use protocol tcp with an instance name')
+            if protocol in ['np','lcp'] and port:
+                raise ValueError(f'You can not use protocol np/lcp with a port number')
+        if instance is not None and port is not None:
+            raise ValueError('You can only use instance or port, not both together')
+        self.protocol = protocol
+        self.quoted_identifier = quoted_identifier
+        self.instance = instance
+        self.trust_server_certificate = trust_server_certificate
+
+    @property
+    def sqlalchemy_url(self):
+        return super().sqlalchemy_url \
+                + ('&TrustServerCertificate=yes' if self.trust_server_certificate else '')
 
 class OracleDB(DB):
     def __init__(self, host: str = None, port: int = 0, endpoint: str = None, user: str = None, password: str = None):
