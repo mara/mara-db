@@ -216,3 +216,34 @@ class SQLiteDB(DB):
     @property
     def sqlalchemy_url(self):
         return f'sqlite:///{self.file_name}'
+
+
+class SnowflakeDB(DB):
+    """A database connection to a Snowflake database"""
+    def __init__(self, connection: str = None, account: str = None, user: str = None, password: str = None, database: str = None,
+                 private_key_file: str = None, private_key_passphrase: str = None) -> None:
+        """
+        Connection information for a Snowflake database
+
+        Args:
+            connection: The connection name definend in the snowsql configuration ~/.snowsql/config
+            account: The account identifier. See here: https://docs.snowflake.com/en/user-guide/admin-account-identifier.html
+            user: The user name
+            password: The password of the user
+            database: The database name
+            private_key_file: Path to private key file in PEM format used for key pair authentication. The private key file must be encrypted.
+            private_key_passphrase: The passphrase for the private key file.
+        """
+        self.connection = connection
+        self.account = account
+        self.user = user
+        self.password = password
+        self.database = database
+        self.private_key_file = private_key_file
+        self.private_key_passphrase = private_key_passphrase
+
+    @property
+    def sqlalchemy_url(self):
+        assert all(v is not None for v in [self.account, self.user, self.password]), "sqlalchemy_url for SnowflakeDB requires a user, password and account"
+        return (f'snowflake://{self.user}:{self.password}@{self.account}'
+                + (f'/{self.database}' if self.database else ''))

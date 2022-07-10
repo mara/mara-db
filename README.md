@@ -95,6 +95,7 @@ The following **command line clients** are used to access the various databases:
 | Oracle | `sqlplus64` | See the [Oracle Instant Client](https://www.oracle.com/technetwork/database/database-technologies/instant-client/overview/index.html) homepage for details. On Mac, follow [these instructions](https://vanwollingen.nl/install-oracle-instant-client-and-sqlplus-using-homebrew-a233ce224bf). Then ` sudo ln -s /usr/local/bin/sqlplus /usr/local/bin/sqlplus64` to make the binary accessible as `sqlplus64`. |
 | SQLite | `sqlite3` | Available in standard distributions. Version >3.20.x required (not the case on Ubuntu 14.04). |
 | Big Query | `bq` | See the [Google Cloud SDK](https://cloud.google.com/sdk/docs/quickstarts) page for details. |
+| Snowflake | `snowsql` | See [SnowSQL (CLI Client)](https://docs.snowflake.com/en/user-guide/snowsql.html) |
 
 &nbsp;
 

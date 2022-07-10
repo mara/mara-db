@@ -10,3 +10,4 @@ POSTGRES_DB = dbs.PostgreSQLDB(host='DOCKER_IP', port=-1, user="mara", password=
 MSSQL_DB = None # dbs.SQLServerDB(host='DOCKER_IP', port=-1, user='sa', password='YourStrong@Passw0rd', database='master')
 MSSQL_SQSH_DB = None # dbs.SqshSQLServerDB(host='DOCKER_IP', port=-1, user='sa', password='YourStrong@Passw0rd', database='master')
 MSSQL_SQLCMD_DB = None # dbs.SqlcmdSQLServerDB(host='DOCKER_IP', port=-1, user='sa', password='YourStrong@Passw0rd', database='master', trust_server_certificate=True)
+SNOWFLAKE_DB = None #SnowflakeDB( account='ACCOUNT_IDENTIFER', user='USER', password='PASSWORD', database='SNOWFLAKE_SAMPLE_DATA')
