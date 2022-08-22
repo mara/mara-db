@@ -203,6 +203,17 @@ def __(db: dbs.SnowflakeDB, timezone: str = None, echo_queries: bool = None):
             +' -f /dev/stdin')
 
 
+@query_command.register(dbs.DatabricksDB)
+def __(db: dbs.DatabricksDB, timezone: str = None, echo_queries: bool = None):
+    assert timezone is None, "unimplemented parameter for DatabricksDB"
+    assert not echo_queries, "unimplemented parameter for DatabricksDB"
+    return ('dbsqlcli'
+            + (f' --hostname {db.host}' if db.host else '')
+            + (f' --http-path {db.http_path}' if db.http_path else '')
+            + (f' --access-token {db.access_token}' if db.access_token else '')
+            + ' -e /dev/stdin')
+
+
 # -------------------------------
 
 
@@ -366,6 +377,30 @@ def __(db: dbs.SnowflakeDB, header: bool = None, footer: bool = None, delimiter_
     return (query_command(db, echo_queries=False) + f' -o output_format={output_format} -o friendly=false -o timing=false'
             +(f' -o header=true' if header else ' -o header=false'))
 
+
+@copy_to_stdout_command.register(dbs.DatabricksDB)
+def __(db: dbs.DatabricksDB, header: bool = None, footer: bool = None, delimiter_char: str = None, csv_format: bool = None):
+    assert footer is None, "unimplemented parameter for DatabricksDB"
+
+    if csv_format is None:
+        csv_format = True
+
+    if not csv_format:
+        raise ValueError('Not supported format: csv_format must be True or not set')
+
+    if not header:
+        remove_header = 'sed 1d'
+
+    if delimiter_char == ',':
+        table_format = 'csv'
+    elif delimiter_char == '\t':
+        table_format = 'tsv'
+    else:
+        raise ValueError(f"Not supported delimiter_char for DatabricksDB: '{delimiter_char}'")
+
+    return (query_command(db, echo_queries=False)
+            + f' --table-format {table_format}'
+            + (f'\n  | {remove_header}' if remove_header else ''))
 
 
 # -------------------------------

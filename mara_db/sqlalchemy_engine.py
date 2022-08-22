@@ -42,3 +42,13 @@ def __(db: mara_db.dbs.BigQueryDB):
     return sqlalchemy.create_engine(url,
                                     credentials_path=db.service_account_json_file_name,
                                     location=db.location)
+
+
+@engine.register(mara_db.dbs.DatabricksDB)
+def __(db: mara_db.dbs.DatabricksDB):
+    url = db.sqlalchemy_url
+
+    return sqlalchemy.create_engine(url,
+                                    connect_args={
+                                        "http_path": db.http_path
+                                    })

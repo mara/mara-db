@@ -28,5 +28,10 @@ setup(
         'snowflake': [
             'snowflake-sqlalchemy'
         ],
+        'databricks': [
+            'databricks-sql-cli',
+            'databricks-sql-connector',
+            'sqlalchemy-databricks',
+        ]
     }
 )
