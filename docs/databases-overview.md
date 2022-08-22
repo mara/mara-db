@@ -13,6 +13,7 @@ The following database engines are supported:
 | [Microsoft SQL Server]    | SQLServerDB         | mssql+pyodbc
 | [Azure Synapse Analytics] | SQLServerDB         | mssql+pyodbc
 | [Oracle Database]         | OracleDB            | -
+| [Snowflake]               | SnowflakeDB         | snowflake
 | [SQLite]                  | SQLiteDB            | sqlite
 
 
@@ -22,6 +23,7 @@ The following database engines are supported:
 [MariaDB]: https://mariadb.com/
 [MySQL]: https://www.mysql.com/
 [Oracle Database]: https://www.oracle.com/database/
+[Snowflake]: https://www.snowflake.com/
 [SQLite]: https://www.sqlite.org/
 [Microsoft SQL Server]: https://www.microsoft.com/en-us/sql-server
 [Azure Synapse Analytics]: https://azure.microsoft.com/en-us/services/synapse-analytics/
@@ -40,6 +42,7 @@ Shows which functions are supported with which database engine:
 | MysqlDB             | Yes      | Yes          | -          | Yes    | Yes
 | SQLServerDB         | Yes      | Yes          | -          | Yes    | Yes
 | OracleDB            | Yes      | Yes          | -          | -      |
+| SnowflakeDB         | Yes      | Yes          | -          | -      |
 | SQLiteDB            | Yes      | Yes          | -          | -      |
 
 *Write STDOUT* gives the possibility to write a query to STDOUT
@@ -60,4 +63,5 @@ Shows which copy operations are implemented by default.
 | MysqlDB      | Yes          | Yes        | Yes
 | SQLServerDB  | Yes          | Yes        | Yes
 | OracleDB     | Yes          | Yes        | Yes
+| SnowflakeDB  |
 | SQLiteDB     | Yes          | Yes        | Yes

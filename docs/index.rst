@@ -54,6 +54,7 @@ This section focuses on the supported database engines.
    dbs/Oracle
    dbs/SQLServer
    dbs/Mysql
+   dbs/Snowflake
    dbs/SQLite
 
 
