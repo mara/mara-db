@@ -1,7 +1,13 @@
 Microsoft SQL Server
 ====================
 
-TBD
+There are two ways to use SQL Server with mara:
+
+1. using the official MSSQL Tools for SQL Server on linux (`sqlcmd`, `bcp`)
+2. using the linux sql client tool `sqsh` (legacy)
+
+Currently by default `sqsh` is used. This will be changed in a future version to the official MSSQL Tools from Microsoft. You can explicitly
+specify the client tool you want to use, see below.
 
 
 Prerequisites
@@ -26,7 +32,16 @@ Use extras `mssql` to install all required packages.
 
     $ pip install mara-db[mssql]
 
-This module uses thq `sqsh` shell tool which you can install from https://sourceforge.net/projects/sqsh/. Usually messy to get working.
+Use MSSQL Tools
+~~~~~~~~~~~~~~~
+
+To see how to install the MSSQL Tools, follow this guide:
+`Install the SQL Server command-line tools sqlcmd and bcp on Linux <https://docs.microsoft.com/en-us/sql/linux/sql-server-linux-setup-tools>`_
+
+
+Use sqsh
+~~~~~~~~
+To install the `sqsh` shell tool, see here https://sourceforge.net/projects/sqsh/. Usually messy to get working.
 On ubuntu, use http://ppa.launchpad.net/jasc/sqsh/ubuntu/ backport. On Mac, try the homebrew version or install from source.
 
 
@@ -48,6 +63,24 @@ Configuration examples
                     database='dwh'),
             }
 
+            # explicitly define to use the MSSQL Tools (RECOMMENDED)
+            mara_db.config.databases = lambda: {
+                'dwh': mara_db.dbs.SqlcmdSQLServerDB(
+                    host='localhost',
+                    user='sa',
+                    password='<my_strong_password>',
+                    database='dwh'),
+            }
+
+            # explicitly define to use sqsh
+            mara_db.config.databases = lambda: {
+                'dwh': mara_db.dbs.SqshSQLServerDB(
+                    host='localhost',
+                    user='sa',
+                    password='<my_strong_password>',
+                    database='dwh'),
+            }
+
     .. group-tab:: Use ODBC Driver 18
 
         .. code-block:: python
@@ -55,6 +88,26 @@ Configuration examples
             import mara_db.dbs
             mara_db.config.databases = lambda: {
                 'dwh': mara_db.dbs.SQLServerDB(
+                    host='localhost',
+                    user='sa',
+                    password='<my_strong_password>',
+                    database='dwh',
+                    odbc_driver='ODBC Driver 18 for SQL Server'),
+            }
+
+            # explicitly define to use the MSSQL Tools (RECOMMENDED)
+            mara_db.config.databases = lambda: {
+                'dwh': mara_db.dbs.SqlcmdSQLServerDB(
+                    host='localhost',
+                    user='sa',
+                    password='<my_strong_password>',
+                    database='dwh',
+                    odbc_driver='ODBC Driver 18 for SQL Server'),
+            }
+
+            # explicitly define to use sqsh
+            mara_db.config.databases = lambda: {
+                'dwh': mara_db.dbs.SqshSQLServerDB(
                     host='localhost',
                     user='sa',
                     password='<my_strong_password>',
@@ -80,6 +133,16 @@ Configuration
     :noindex:
 
 .. autoclass:: SQLServerDB
+    :special-members: __init__
+    :inherited-members:
+    :members:
+
+.. autoclass:: SqlcmdSQLServerDB
+    :special-members: __init__
+    :inherited-members:
+    :members:
+
+.. autoclass:: SqshSQLServerDB
     :special-members: __init__
     :inherited-members:
     :members:
