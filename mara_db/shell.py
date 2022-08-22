@@ -194,7 +194,7 @@ def __(db: dbs.SnowflakeDB, timezone: str = None, echo_queries: bool = None):
     assert not echo_queries, "unimplemented parameter for SnowflakeDB"
     return ((f'SNOWSQL_PWD={shlex.quote(db.password)} ' if db.password else '')
             +(f'SNOWSQL_PRIVATE_KEY_PASSPHRASE={shlex.quote(db.private_key_passphrase)}' if db.private_key_passphrase else '')
-            + 'snowsql --noup'
+            + 'snowsql --noup -o exit_on_error=true'
             +(f' -c {db.connection}' if db.connection else '')
             +(f' -a {db.account}' if db.account else '')
             +(f' -u {db.user}' if db.user else '')
