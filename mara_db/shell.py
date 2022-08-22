@@ -390,6 +390,8 @@ def __(db: dbs.DatabricksDB, header: bool = None, footer: bool = None, delimiter
 
     if not header:
         remove_header = 'sed 1d'
+    else:
+        remove_header = None
 
     if delimiter_char == ',':
         table_format = 'csv'
