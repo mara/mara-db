@@ -96,6 +96,7 @@ The following **command line clients** are used to access the various databases:
 | SQLite | `sqlite3` | Available in standard distributions. Version >3.20.x required (not the case on Ubuntu 14.04). |
 | Big Query | `bq` | See the [Google Cloud SDK](https://cloud.google.com/sdk/docs/quickstarts) page for details. |
 | Snowflake | `snowsql` | See [SnowSQL (CLI Client)](https://docs.snowflake.com/en/user-guide/snowsql.html) |
+| Databricks | `dbsqlcli` | Included when using package extra `databricks` via package [databricks-sql-cli](https://pypi.org/project/databricks-sql-cli/). See [Databricks SQL CLI](https://docs.databricks.com/dev-tools/databricks-sql-cli.html#) |
 
 &nbsp;
 
