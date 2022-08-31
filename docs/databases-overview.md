@@ -58,14 +58,14 @@ Copy matrix
 
 Shows which copy operations are implemented by default.
 
-| from / to    | PostgreSQLDB | RedshiftDB | BigQueryDB | MysqlDB | SQLServerDB | OracleDB | SQLiteDB |
-| ------------ | ------------ | ---------- | ---------- | ------- | ----------- | -------- | -------- |
-| PostgreSQLDB | Yes          | Yes        | Yes
-| RedshiftDB   | Yes          | Yes        | Yes
-| BigQueryDB   | Yes          | Yes        |
-| DatabricksDB |
-| MysqlDB      | Yes          | Yes        | Yes
-| SQLServerDB  | Yes          | Yes        | Yes
-| OracleDB     | Yes          | Yes        | Yes
-| SnowflakeDB  |
-| SQLiteDB     | Yes          | Yes        | Yes
+| from / to    | PostgreSQLDB | RedshiftDB | BigQueryDB | DatabricksDB | MysqlDB | SQLServerDB | OracleDB | SnowflakeDB | SQLiteDB |
+| ------------ | ------------ | ---------- | ---------- | ------------ | ------- | ----------- | -------- | ----------- | -------- |
+| PostgreSQLDB | Yes          | Yes        | Yes        | -            | -       | -           | -        | -           | -        |
+| RedshiftDB   | Yes          | Yes        | Yes        | -            | -       | -           | -        | -           | -        |
+| BigQueryDB   | Yes          | Yes        | -          | -            | -       | -           | -        | -           | -        |
+| DatabricksDB | -            | -          | -          | -            | -       | -           | -        | -           | -        |
+| MysqlDB      | Yes          | Yes        | Yes        | -            | -       | -           | -        | -           | -        |
+| SQLServerDB  | Yes          | Yes        | Yes        | -            | -       | -           | -        | -           | -        |
+| OracleDB     | Yes          | Yes        | Yes        | -            | -       | -           | -        | -           | -        |
+| SnowflakeDB  | -            | -          | -          | -            | -       | -           | -        | -           | -        |
+| SQLiteDB     | Yes          | Yes        | Yes        | -            | -       | -           | -        | -           | -        |
