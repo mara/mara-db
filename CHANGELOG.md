@@ -1,5 +1,30 @@
 # Changelog
 
+## 4.8.0 (2022-09-01)
+
+### Breaking Changes
+
+- when using BigQuery you need to rename the BigQueryDB db config parameter `service_account_private_key_file` to `service_account_json_file_name` (#45)
+- when using BigQuery with copy/read operations you need to specify parameter `gcloud_gcs_bucket_name`  in the BigQueryDB db config (#45)
+
+### Feat :tada:
+
+- Add Databricks db support (#62)
+- Add Snowflake db support (#52/#61)
+- Add sqlalchemy support for BigQuery (#45/#50)
+- Add sqlalchemy support for SQL Server (#46)
+- Add option to use either MSSQL Tools (sqlcmd/bcp) or sqsh to connect to SQL Server (#57)
+- Add documentation readthedocs.io documentation (#59)
+
+### Changes :rocket:
+- Extend BigQuery functionality (#45)
+- add extras per database engine (#50/#53). Postgres and Readshift is still included by default. <br/>**Note:** It is recommended to always specifcy the extras for the database you use.
+- use client-side rendering for graphviz fallback (#51)
+
+### Bugfixes :bug:
+- add all package files in wheel
+- a proper error is now thrown when the user tries to look at the schema of a BigQuery database
+
 ## 4.7.0 - 4.7.1 (2020-10-23) 
 
 - Add BigQuery support
