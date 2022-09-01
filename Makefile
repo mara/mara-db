@@ -20,6 +20,13 @@ test:
 	.venv/bin/pytest
 
 
+publish:
+	# manually publishing the package
+	.venv/bin/pip install build twine
+	.venv/bin/python -m build
+	.venv/bin/twine upload dist/*
+
+
 clean:
 	# clean up
 	rm -rf .venv/ build/ dist/ ${MODULE_NAME}.egg-info/ .pytest_cache/ .eggs/
