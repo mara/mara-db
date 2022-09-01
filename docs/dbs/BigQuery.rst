@@ -3,8 +3,8 @@ Google Big Query
 
 Optionally, for loading data from files into BigQuery, the `gcloud_gcs_bucket_name` can be specified in the database initialization.
 This will use the Google Cloud Storage bucket specified as cache for loading data and over-coming potential limitations.
-For more see [loading-data](https://cloud.google.com/bigquery/docs/bq-command-line-tool#loading_data). 
-By default, files will directly loaded locally as described in [loading-local-data](https://cloud.google.com/bigquery/docs/loading-data-local#loading_data_from_a_local_data_source).
+For more see `loading-data <https://cloud.google.com/bigquery/docs/bq-command-line-tool#loading_data>`_. 
+By default, files will directly loaded locally as described in `loading-local-data <https://cloud.google.com/bigquery/docs/loading-data-local#loading_data_from_a_local_data_source>`_.
 
 Installation
 ------------
