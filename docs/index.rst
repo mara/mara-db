@@ -51,6 +51,7 @@ This section focuses on the supported database engines.
    dbs/PostgreSQL
    dbs/Redshift
    dbs/BigQuery
+   dbs/Databricks
    dbs/Oracle
    dbs/SQLServer
    dbs/Mysql

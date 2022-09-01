@@ -8,6 +8,7 @@ The following database engines are supported:
 | [PostgreSQL]              | PostgreSQLDB        | postgresql+psycopg2
 | [Amazon Redshift]         | RedshiftDB          | postgresql+psycopg2
 | [Google Big Query]        | BigQueryDB          | bigquery
+| [Databricks]              | DatabricksDB        | databricks+connector
 | [MariaDB]                 | MysqlDB             | -
 | [MySQL]                   | MysqlDB             | -
 | [Microsoft SQL Server]    | SQLServerDB         | mssql+pyodbc
@@ -20,6 +21,7 @@ The following database engines are supported:
 [PostgreSQL]: https://www.postgresql.org/
 [Amazon Redshift]: https://aws.amazon.com/de/redshift/
 [Google Big Query]: https://cloud.google.com/bigquery
+[Databricks]: https://www.databricks.com/
 [MariaDB]: https://mariadb.com/
 [MySQL]: https://www.mysql.com/
 [Oracle Database]: https://www.oracle.com/database/
@@ -39,6 +41,7 @@ Shows which functions are supported with which database engine:
 | PostgreSQLDB        | Yes      | Yes          | Yes        | Yes    | Yes
 | RedshiftDB          | Yes      | Yes          | Yes        | Yes    | Yes
 | BigQueryDB          | Yes      | Yes          | Yes        | Yes    | *no foreign key support by engine*
+| DatabricksDB        | Yes      | Yes          | -          | Yes    |
 | MysqlDB             | Yes      | Yes          | -          | Yes    | Yes
 | SQLServerDB         | Yes      | Yes          | -          | Yes    | Yes
 | OracleDB            | Yes      | Yes          | -          | -      |
@@ -55,13 +58,14 @@ Copy matrix
 
 Shows which copy operations are implemented by default.
 
-| from / to    | PostgreSQLDB | RedshiftDB | BigQueryDB | MysqlDB | SQLServerDB | OracleDB | SQLiteDB |
-| ------------ | ------------ | ---------- | ---------- | ------- | ----------- | -------- | -------- |
-| PostgreSQLDB | Yes          | Yes        | Yes
-| RedshiftDB   | Yes          | Yes        | Yes
-| BigQueryDB   | Yes          | Yes        |
-| MysqlDB      | Yes          | Yes        | Yes
-| SQLServerDB  | Yes          | Yes        | Yes
-| OracleDB     | Yes          | Yes        | Yes
-| SnowflakeDB  |
-| SQLiteDB     | Yes          | Yes        | Yes
+| from / to    | PostgreSQLDB | RedshiftDB | BigQueryDB | DatabricksDB | MysqlDB | SQLServerDB | OracleDB | SnowflakeDB | SQLiteDB |
+| ------------ | ------------ | ---------- | ---------- | ------------ | ------- | ----------- | -------- | ----------- | -------- |
+| PostgreSQLDB | Yes          | Yes        | Yes        | -            | -       | -           | -        | -           | -        |
+| RedshiftDB   | Yes          | Yes        | Yes        | -            | -       | -           | -        | -           | -        |
+| BigQueryDB   | Yes          | Yes        | -          | -            | -       | -           | -        | -           | -        |
+| DatabricksDB | -            | -          | -          | -            | -       | -           | -        | -           | -        |
+| MysqlDB      | Yes          | Yes        | Yes        | -            | -       | -           | -        | -           | -        |
+| SQLServerDB  | Yes          | Yes        | Yes        | -            | -       | -           | -        | -           | -        |
+| OracleDB     | Yes          | Yes        | Yes        | -            | -       | -           | -        | -           | -        |
+| SnowflakeDB  | -            | -          | -          | -            | -       | -           | -        | -           | -        |
+| SQLiteDB     | Yes          | Yes        | Yes        | -            | -       | -           | -        | -           | -        |

@@ -247,3 +247,23 @@ class SnowflakeDB(DB):
         assert all(v is not None for v in [self.account, self.user, self.password]), "sqlalchemy_url for SnowflakeDB requires a user, password and account"
         return (f'snowflake://{self.user}:{self.password}@{self.account}'
                 + (f'/{self.database}' if self.database else ''))
+
+
+class DatabricksDB(DB):
+    """A database connection to a Databricks"""
+    def __init__(self, host: str = None, http_path: str = None, access_token: str = None) -> None:
+        """
+        Connection information for a Databricks
+
+        Args:
+            host: The hostname
+            http_path: The http path
+            access_token: The Access Token
+        """
+        self.host = host
+        self.http_path = http_path
+        self.access_token = access_token
+
+    @property
+    def sqlalchemy_url(self):
+        return f"databricks+connector://token:{self.access_token}@{self.host}:443/"
