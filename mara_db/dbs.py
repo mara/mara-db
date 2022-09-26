@@ -151,7 +151,7 @@ class SQLServerDB(DB):
 
     @property
     def sqlalchemy_url(self):
-        import urllib
+        import urllib.parse
         port = self.port if self.port else 1433
         driver = self.odbc_driver.replace(' ','+')
         return f'mssql+pyodbc://{self.user}:{urllib.parse.quote(self.password)}@{self.host}:{port}/{self.database}?driver={driver}'
