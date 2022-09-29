@@ -334,7 +334,7 @@ def __(db: dbs.SqshSQLServerDB, header: bool = None, footer: bool = None, delimi
        csv_format: bool = None, pipe_format: Format = None):
     assert all(v is None for v in [header, footer]), "unimplemented parameter for SqshSQLServerDB"
     if csv_format == False:
-        raise ValueError(f'For SqshSQLServerDB csv_format must be True or not set')
+        raise ValueError(f'For SqshSQLServerDB csv_format must be True')
     if pipe_format:
         if isinstance(pipe_format, CsvFormat):
             if pipe_format.header:
@@ -353,7 +353,7 @@ def __(db: dbs.SqlcmdSQLServerDB, header: bool = None, footer: bool = None, deli
        csv_format: bool = None, pipe_format: Format = None):
     assert footer is None, "unimplemented parameter for SqlcmdSQLServerDB"
     if csv_format == False:
-        raise ValueError(f'For SqlcmdSQLServerDB csv_format must be True or not set')
+        raise ValueError(f'For SqlcmdSQLServerDB csv_format must be True')
     if pipe_format:
         if isinstance(pipe_format, CsvFormat):
             if header is None:
