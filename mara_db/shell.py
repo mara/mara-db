@@ -266,6 +266,8 @@ def __(db: dbs.PostgreSQLDB, header: bool = None, footer: bool = None,
                 delimiter_char = pipe_format.delimiter_char
             if header is None:
                 header = pipe_format.header
+            if footer is None:
+                footer = pipe_format.footer
         else:
             raise ValueError(f'Unsupported pipe_format for PostgreSQLDB: {pipe_format}')
 

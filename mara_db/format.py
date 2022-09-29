@@ -15,7 +15,7 @@ class CsvFormat(Format):
     """
     CSV file format. See https://tools.ietf.org/html/rfc4180
     """
-    def __init__(self, delimiter_char: str = None, quote_char: str = None, header: bool = None):
+    def __init__(self, delimiter_char: str = None, quote_char: str = None, header: bool = None, footer: bool = False):
         """
         CSV file format. See https://tools.ietf.org/html/rfc4180
 
@@ -23,10 +23,12 @@ class CsvFormat(Format):
             delimiter_char: The character that separates columns
             quote_char: The character for quoting strings
             header: Whether a csv header with the column name(s) is part of the CSV file.
+            footer: Whether a footer will be included or not. False by default.
         """
         self.delimiter_char = delimiter_char
         self.quote_char = quote_char
         self.header = header
+        self.footer = footer
 
 
 class JsonlFormat(Format):
