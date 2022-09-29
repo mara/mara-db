@@ -330,7 +330,7 @@ def __(db: dbs.MysqlDB, header: bool = None, footer: bool = None, delimiter_char
 @copy_to_stdout_command.register(dbs.SqshSQLServerDB)
 def __(db: dbs.SqshSQLServerDB, header: bool = None, footer: bool = None, delimiter_char: str = None,
        csv_format: bool = None, pipe_format: Format = None):
-    assert all(v is None for v in [header, footer]), "unimplemented parameter for SQLServerDB"
+    assert all(v is None for v in [header, footer]), "unimplemented parameter for SqshSQLServerDB"
     if csv_format == False:
         raise ValueError(f'For SqshSQLServerDB csv_format must be True or not set')
     if pipe_format:
