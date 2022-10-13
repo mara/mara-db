@@ -12,6 +12,7 @@ from mara_db import dbs, config
 from multimethod import multidispatch
 
 from .format import *
+from .format import _check_format_with_args_used, _get_format_from_args
 
 
 @singledispatch
@@ -260,52 +261,48 @@ def __(alias: str, header: bool = None, footer: bool = None, delimiter_char: str
 @copy_to_stdout_command.register(dbs.PostgreSQLDB)
 def __(db: dbs.PostgreSQLDB, header: bool = None, footer: bool = None,
        delimiter_char: str = None, csv_format: bool = None, pipe_format: Format = None):
-    if pipe_format:
-        if isinstance(pipe_format, CsvFormat):
-            if delimiter_char is None:
-                delimiter_char = pipe_format.delimiter_char
-            if header is None:
-                header = pipe_format.header
-            if footer is None:
-                footer = pipe_format.footer
-        else:
-            raise ValueError(f'Unsupported pipe_format for PostgreSQLDB: {pipe_format}')
+    _check_format_with_args_used(pipe_format, header=header, footer=footer, delimiter_char=delimiter_char, csv_format=csv_format)
+    if not pipe_format:
+        pipe_format = _get_format_from_args(header=header, footer=footer, delimiter_char=delimiter_char, csv_format=csv_format)
 
-    if header is None:
-        header = False
-
-    if footer is None:
-        footer = False
-
-    if delimiter_char is None:
-        delimiter_char = '\t'
-
-    if csv_format or isinstance(pipe_format, CsvFormat):
-        assert not (footer or header), 'unsupported when csv_format = True'
+    if isinstance(pipe_format, CsvFormat):
+        assert not (pipe_format.footer or pipe_format.header), 'unsupported when format is CsvFormat'
         return r" sed '/\;/q' | sed 's/\;.*//' " + '\\\n' \
-               + f'''| (echo "COPY (" && cat && echo ") TO STDOUT WITH {'CSV ' if csv_format else ''} DELIMITER '{delimiter_char}' ") \\\n''' \
+               + f'''| (echo "COPY (" && cat && echo ") TO STDOUT WITH CSV  DELIMITER '{pipe_format.delimiter_char or '\t'}' ") \\\n''' \
                + '  | ' + query_command(db, echo_queries=False) + ' --variable=FETCH_COUNT=10000 \\\n' \
                + "  | sed '/^$/d'"  # remove empty lines
-    else:
+
+    elif isinstance(pipe_format, NativeFormat):
         header_argument = '--tuples-only' if not header else ''
         footer_argument = '--pset="footer=off"' if not footer else ''
         return (query_command(db, echo_queries=False) + ' --variable=FETCH_COUNT=10000'
                 + " " + header_argument + " " + footer_argument
-                + f" --no-align --field-separator='{delimiter_char}' \\\n"
+                + f" --no-align --field-separator='{None}' \\\n"
                 + "  | sed '/^$/d'"  # remove empty lines
                 )
+
+    else:
+        raise ValueError(f'Unsupported pipe_format for PostgreSQLDB: {pipe_format}')
 
 
 @copy_to_stdout_command.register(dbs.BigQueryDB)
 def __(db: dbs.BigQueryDB, header: bool = None, footer: bool = None, delimiter_char: str = None,
        csv_format: bool = None, pipe_format: Format = None):
-    assert all(v is None for v in [header, footer]), "unimplemented parameter for BigQuery"
-    if pipe_format:
-        if isinstance(pipe_format, CsvFormat):
-            if pipe_format.header:
-                raise ValueError('Unsupported pipe_format.header for BigQueryDB')
-        else:
-            raise ValueError(f'Unsupported pipe_format for MysqlDB: {pipe_format}')
+    _check_format_with_args_used(pipe_format, header=header, footer=footer, delimiter_char=delimiter_char, csv_format=csv_format)
+    if not pipe_format:
+        pipe_format = _get_format_from_args(header=header, footer=footer, delimiter_char=delimiter_char, csv_format=csv_format)
+
+    if isinstance(pipe_format, CsvFormat):
+        if pipe_format.header:
+            raise ValueError('Unsupported pipe_format.header for BigQueryDB')
+        if pipe_format.footer:
+            raise ValueError('Unsupported pipe_format.footer for BigQueryDB')
+
+    elif isinstance(pipe_format, NativeFormat):
+        pass
+
+    else:
+        raise ValueError(f'Unsupported pipe_format for MysqlDB: {pipe_format}')
 
     remove_header = 'sed 1d'
     return query_command(db) + f' | {remove_header}'
@@ -314,54 +311,76 @@ def __(db: dbs.BigQueryDB, header: bool = None, footer: bool = None, delimiter_c
 @copy_to_stdout_command.register(dbs.MysqlDB)
 def __(db: dbs.MysqlDB, header: bool = None, footer: bool = None, delimiter_char: str = None, csv_format: bool = None,
        pipe_format: Format = None):
-    assert all(v is None for v in [footer, delimiter_char, csv_format]), "unimplemented parameter for MysqlDB"
-    if pipe_format:
-        if isinstance(pipe_format, CsvFormat):
-            if header is None:
-                header = pipe_format.header
-        else:
-            raise ValueError(f'Unsupported pipe_format for MysqlDB: {pipe_format}')
+    _check_format_with_args_used(pipe_format, header=header, footer=footer, delimiter_char=delimiter_char, csv_format=csv_format)
+    if not pipe_format:
+        pipe_format = _get_format_from_args(header=header, footer=footer, delimiter_char=delimiter_char, csv_format=csv_format)
 
-    if header is None:
+    header: bool
+
+    if isinstance(pipe_format, CsvFormat):
+        if pipe_format.footer:
+            raise ValueError('Unsupported pipe_format.footer for MysqlDB')
+        if pipe_format.delimiter_char:
+            raise ValueError('Unsupported pipe_format.delimiter_char for MysqlDB')
+
+        header = pipe_format.header
+
+    elif isinstance(pipe_format, NativeFormat):
         header = False
 
-    header_argument = '--skip-column-names' if header == False else ''
+    else:
+        raise ValueError(f'Unsupported pipe_format for MysqlDB: {pipe_format}')
+
+    header_argument = '--skip-column-names' if not header else ''
     return query_command(db) + ' ' + header_argument
 
 
 @copy_to_stdout_command.register(dbs.SqshSQLServerDB)
 def __(db: dbs.SqshSQLServerDB, header: bool = None, footer: bool = None, delimiter_char: str = None,
        csv_format: bool = None, pipe_format: Format = None):
-    assert all(v is None for v in [header, footer]), "unimplemented parameter for SqshSQLServerDB"
-    if csv_format == False:
-        raise ValueError(f'For SqshSQLServerDB csv_format must be True')
-    if pipe_format:
-        if isinstance(pipe_format, CsvFormat):
-            if pipe_format.header:
-                raise ValueError('pipe_format.header is not supported for SqshSQLServerDB')
-            if delimiter_char is None:
-                delimiter_char = pipe_format.delimiter_char
-        else:
-            raise ValueError(f'Unsupported pipe_format for SqshSQLServerDB: {pipe_format}')
-    if delimiter_char and delimiter_char != ',':
-        raise ValueError(f"For SqshSQLServerDB delimiter_char must ','")
+    _check_format_with_args_used(pipe_format, header=header, footer=footer, delimiter_char=delimiter_char, csv_format=csv_format)
+    if not pipe_format:
+        pipe_format = _get_format_from_args(header=header, footer=footer, delimiter_char=delimiter_char, csv_format=csv_format)
+
+    if isinstance(pipe_format, CsvFormat):
+        if pipe_format.header:
+            raise ValueError('pipe_format.header is not supported for SqshSQLServerDB')
+        if pipe_format.footer:
+            raise ValueError('pipe_format.footer is not supported for SqshSQLServerDB')
+        if pipe_format.delimiter_char and pipe_format.delimiter_char != ',':
+            raise ValueError(f"For SqshSQLServerDB delimiter_char must ','")
+
+    elif isinstance(pipe_format, NativeFormat):
+        pass
+
+    else:
+        raise ValueError(f'Unsupported pipe_format for SqshSQLServerDB: {pipe_format}')
+
     return query_command(db, echo_queries=False) + " -m csv"
 
 
 @copy_to_stdout_command.register(dbs.SqlcmdSQLServerDB)
 def __(db: dbs.SqlcmdSQLServerDB, header: bool = None, footer: bool = None, delimiter_char: str = None,
        csv_format: bool = None, pipe_format: Format = None):
-    assert footer is None, "unimplemented parameter for SqlcmdSQLServerDB"
-    if csv_format == False:
-        raise ValueError(f'For SqlcmdSQLServerDB csv_format must be True')
-    if pipe_format:
-        if isinstance(pipe_format, CsvFormat):
-            if header is None:
-                header = pipe_format.header
-            if delimiter_char is None:
-                delimiter_char = pipe_format.delimiter_char
-        else:
-            raise ValueError(f'Unsupported pipe_format for SqlcmdSQLServerDB: {pipe_format}')
+    _check_format_with_args_used(pipe_format, header=header, footer=footer, delimiter_char=delimiter_char, csv_format=csv_format)
+    if not pipe_format:
+        pipe_format = _get_format_from_args(header=header, footer=footer, delimiter_char=delimiter_char, csv_format=csv_format)
+
+    header: bool
+    delimiter_char: str
+
+    if isinstance(pipe_format, CsvFormat):
+        if pipe_format.footer:
+            raise ValueError('pipe_format.footer is not supported for SqlcmdSQLServerDB')
+
+        header = pipe_format.header
+        delimiter_char = pipe_format.delimiter_char
+
+    elif isinstance(pipe_format, NativeFormat):
+        header = False
+
+    else:
+        raise ValueError(f'Unsupported pipe_format for SqlcmdSQLServerDB: {pipe_format}')
 
     # manipulate the SQL query
     command = "(echo 'SET NOCOUNT ON\n' && cat) \\\n  | "
@@ -369,7 +388,7 @@ def __(db: dbs.SqlcmdSQLServerDB, header: bool = None, footer: bool = None, deli
 
     return (command + query_command(db, echo_queries=False)
             + ' -W'
-            + (f' "-s{delimiter_char}"' if delimiter_char else ' -s,')
+            + (f''' "-s{delimiter_char or ','}"''')
             + (f' -h-1' if not header else '')
             + (f' -w 65535') # see https://docs.microsoft.com/en-us/sql/tools/sqlcmd-utility?view=sql-server-ver15, is used to avoid line-break when output is longer then 80 characters
             # removes the dashed line between header and data rows
@@ -379,9 +398,24 @@ def __(db: dbs.SqlcmdSQLServerDB, header: bool = None, footer: bool = None, deli
 @copy_to_stdout_command.register(dbs.OracleDB)
 def __(db: dbs.OracleDB, header: bool = None, footer: bool = None, delimiter_char: str = None, csv_format: bool = None,
        pipe_format: Format = None):
-    assert all(v is None for v in [header, footer, delimiter_char, csv_format]), "unimplemented parameter for OracleDB"
-    if pipe_format and not isinstance(pipe_format, CsvFormat):
+    _check_format_with_args_used(pipe_format, header=header, footer=footer, delimiter_char=delimiter_char, csv_format=csv_format)
+    if not pipe_format:
+        pipe_format = _get_format_from_args(header=header, footer=footer, delimiter_char=delimiter_char, csv_format=csv_format)
+
+    if isinstance(pipe_format, CsvFormat):
+        if pipe_format.header:
+            raise ValueError('pipe_format.header is not supported for OracleDB')
+        if pipe_format.footer:
+            raise ValueError('pipe_format.footer is not supported for OracleDB')
+        if pipe_format.delimiter_char:
+            raise ValueError('pipe_format.delimiter_char is not supported for OracleDB')
+
+    elif isinstance(pipe_format, NativeFormat):
+        pass
+
+    else:
         raise ValueError(f'Unsupported pipe_format for OracleDB: {pipe_format}')
+
     return "(echo 'set markup csv on\nset feedback off\nset heading off' && cat)" \
            + " \\\n  | " + query_command(db)
 
@@ -389,55 +423,59 @@ def __(db: dbs.OracleDB, header: bool = None, footer: bool = None, delimiter_cha
 @copy_to_stdout_command.register(dbs.SQLiteDB)
 def __(db: dbs.SQLiteDB, header: bool = None, footer: bool = None, delimiter_char: str = None, csv_format: bool = None,
        pipe_format: Format = None):
-    assert all(v is None for v in [footer, csv_format]), "unimplemented parameter for SQLiteDB"
+    _check_format_with_args_used(pipe_format, header=header, footer=footer, delimiter_char=delimiter_char, csv_format=csv_format)
+    if not pipe_format:
+        pipe_format = _get_format_from_args(header=header, footer=footer, delimiter_char=delimiter_char, csv_format=csv_format)
 
-    if pipe_format:
-        if isinstance(pipe_format, CsvFormat):
-            if header is None:
-                header = pipe_format.header
-            if delimiter_char is None:
-                delimiter_char = pipe_format.delimiter_char
-        else:
-            raise ValueError(f'Unsupported pipe_format for SQLiteDB: {pipe_format}')
+    header_argument: str
+    delimiter_char: str
 
-    if header is None:
-        header = False
+    if isinstance(pipe_format, CsvFormat):
+        if pipe_format.footer:
+            raise ValueError('pipe_format.footer is not supported for SQLiteDB')
+        
+        header_argument = '-noheader' if not pipe_format.header else ''
+        delimiter_char = pipe_format.delimiter_char or '\t'
 
-    if delimiter_char is None:
+    elif isinstance(pipe_format, NativeFormat):
+        header_argument = ''
         delimiter_char = '\t'
 
-    header_argument = '-noheader' if not header else ''
+    else:
+        raise ValueError(f'Unsupported pipe_format for SQLiteDB: {pipe_format}')
+
     return query_command(db) + " " + header_argument + f" -separator '{delimiter_char}' -quote"
 
 
 @copy_to_stdout_command.register(dbs.SnowflakeDB)
 def __(db: dbs.SnowflakeDB, header: bool = None, footer: bool = None, delimiter_char: str = None, csv_format: bool = None,
        pipe_format: Format = None):
-    assert footer is None, "unimplemented parameter for SnowflakeDB"
+    _check_format_with_args_used(pipe_format, header=header, footer=footer, delimiter_char=delimiter_char, csv_format=csv_format)
+    if not pipe_format:
+        pipe_format = _get_format_from_args(header=header, footer=footer, delimiter_char=delimiter_char, csv_format=csv_format)
 
-    if pipe_format:
-        if isinstance(pipe_format, CsvFormat):
-            if header is None:
-                header = pipe_format.header
-            if delimiter_char is None:
-                delimiter_char = pipe_format.delimiter_char
+    output_format: str # https://docs.snowflake.com/en/user-guide/snowsql-config.html#output-format
+    header: bool
+
+    if isinstance(pipe_format, CsvFormat):
+        if pipe_format.footer:
+            raise ValueError('pipe_format.footer is not supported for SnowflakeDB')
+
+        if pipe_format.delimiter_char == ',' or pipe_format.delimiter_char is None:
+            output_format = 'csv'
+        elif pipe_format.delimiter_char == '\t':
+            output_format = 'tsv'
         else:
-            raise ValueError(f'Unsupported pipe_format for SnowflakeDB: {pipe_format}')       
+            raise ValueError(f"Not supported delimiter_char for SnowflakeDB: '{pipe_format.delimiter_char}'")
 
-    if csv_format == False:
-        raise ValueError('Not supported format: csv_format must be True or not set')
+        header = pipe_format.header
 
-    if not delimiter_char:
-        delimiter_char = ','
-
-    output_format = None
-    # https://docs.snowflake.com/en/user-guide/snowsql-config.html#output-format
-    if delimiter_char == ',':
+    elif isinstance(pipe_format, NativeFormat):
         output_format = 'csv'
-    elif delimiter_char == '\t':
-        output_format = 'tsv'
+        header = False
+
     else:
-        raise ValueError(f"Not supported delimiter_char for SnowflakeDB: '{delimiter_char}'")
+        raise ValueError(f'Unsupported pipe_format for SnowflakeDB: {pipe_format}')       
 
     # possible other output_format, not implemented:
     #   json = json array
@@ -450,35 +488,36 @@ def __(db: dbs.SnowflakeDB, header: bool = None, footer: bool = None, delimiter_
 @copy_to_stdout_command.register(dbs.DatabricksDB)
 def __(db: dbs.DatabricksDB, header: bool = None, footer: bool = None, delimiter_char: str = None, csv_format: bool = None,
        pipe_format: Format = None):
-    assert footer is None, "unimplemented parameter for DatabricksDB"
+    _check_format_with_args_used(pipe_format, header=header, footer=footer, delimiter_char=delimiter_char, csv_format=csv_format)
+    if not pipe_format:
+        pipe_format = _get_format_from_args(header=header, footer=footer, delimiter_char=delimiter_char, csv_format=csv_format)
 
-    if pipe_format:
-        if isinstance(pipe_format, CsvFormat):
-            if header is None:
-                header = pipe_format.header
-            if delimiter_char is None:
-                delimiter_char = pipe_format.delimiter_char
+    table_format: str
+    remove_header: bool
+
+    if isinstance(pipe_format, CsvFormat):
+        if pipe_format.footer:
+            raise ValueError('pipe_format.footer is not supported for DatabricksDB')
+
+        if pipe_format.delimiter_char == ',' or pipe_format.delimiter_char is None:
+            table_format = 'csv'
+        elif pipe_format.delimiter_char == '\t':
+            table_format = 'tsv'
         else:
-            raise ValueError(f'Unsupported pipe_format for DatabricksDB: {pipe_format}')       
+            raise ValueError(f"Not supported delimiter_char for DatabricksDB: '{pipe_format.delimiter_char}'")
 
-    if csv_format == False:
-        raise ValueError('Not supported format: csv_format must be True or not set')
+        if pipe_format.header:
+            remove_header = True
 
-    if not header:
-        remove_header = 'sed 1d'
-    else:
-        remove_header = None
-
-    if delimiter_char == ',':
+    elif isinstance(pipe_format, NativeFormat):
         table_format = 'csv'
-    elif delimiter_char == '\t':
-        table_format = 'tsv'
+
     else:
-        raise ValueError(f"Not supported delimiter_char for DatabricksDB: '{delimiter_char}'")
+        raise ValueError(f'Unsupported pipe_format for DatabricksDB: {pipe_format}')       
 
     return (query_command(db, echo_queries=False)
             + f' --table-format {table_format}'
-            + (f'\n  | {remove_header}' if remove_header else ''))
+            + (f'\n  | sed 1d' if remove_header else ''))
 
 
 # -------------------------------
@@ -533,36 +572,36 @@ def __(alias: str, target_table: str, csv_format: bool = None, skip_header: bool
 def __(db: dbs.PostgreSQLDB, target_table: str, csv_format: bool = None, skip_header: bool = None,
        delimiter_char: str = None, quote_char: str = None, null_value_string: str = None, timezone: str = None,
        pipe_format: Format = None):
+    _check_format_with_args_used(pipe_format, header=skip_header, delimiter_char=delimiter_char, csv_format=csv_format,
+                                 quote_char=quote_char, null_value_string=null_value_string)
+    if not pipe_format:
+        pipe_format = _get_format_from_args(header=skip_header, delimiter_char=delimiter_char, csv_format=csv_format,
+                                            quote_char=quote_char, null_value_string=null_value_string)
 
     columns = ''
     sed_stdin = ''
-    if pipe_format:
-        if isinstance(pipe_format, JsonlFormat):
-            columns = ' (' + ', '.join(['data']) + ')'
-            # escapes JSON escapings since PostgreSQL interprets C-escapes in TEXT mode
-            sed_stdin += "sed 's/\\\\/\\\\x5C/g' \\\n| "
-        elif isinstance(pipe_format, CsvFormat):
-            csv_format = True
-            if delimiter_char is None:
-                delimiter_char = pipe_format.delimiter_char
-            if quote_char is None:
-                quote_char = pipe_format.quote_char
-            if skip_header is None:
-                skip_header = pipe_format.header
-        else:
-            raise ValueError(f'Unsupported pipe_format for PostgreSQLDB: {pipe_format}')
-
     sql = f'COPY {target_table}{columns} FROM STDIN WITH'
-    if csv_format:
+    if isinstance(pipe_format, JsonlFormat):
+        columns = ' (' + ', '.join(['data']) + ')'
+        # escapes JSON escapings since PostgreSQL interprets C-escapes in TEXT mode
+        sed_stdin += "sed 's/\\\\/\\\\x5C/g' \\\n| "
+
+    elif isinstance(pipe_format, CsvFormat):
         sql += ' CSV'
-    if skip_header:
-        sql += ' HEADER'
-    if delimiter_char is not None:
-        sql += f" DELIMITER AS '{delimiter_char}'"
-    if null_value_string is not None:
-        sql += f" NULL AS '{null_value_string}'"
-    if quote_char is not None:
-        sql += f" QUOTE AS '{quote_char}'"
+        if pipe_format.header:
+            sql += ' HEADER'
+        if pipe_format.delimiter_char is not None:
+            sql += f" DELIMITER AS '{pipe_format.delimiter_char}'"
+        if pipe_format.null_value_string is not None:
+            sql += f" NULL AS '{pipe_format.null_value_string}'"
+        if pipe_format.quote_char is not None:
+            sql += f" QUOTE AS '{pipe_format.quote_char}'"
+
+    elif isinstance(pipe_format, NativeFormat):
+        pass
+
+    else:
+        raise ValueError(f'Unsupported pipe_format for PostgreSQLDB: {pipe_format}')
 
     # escape double quotes
     sql = sql.replace('"', '\\"')
@@ -574,6 +613,12 @@ def __(db: dbs.PostgreSQLDB, target_table: str, csv_format: bool = None, skip_he
 def __(db: dbs.RedshiftDB, target_table: str, csv_format: bool = None, skip_header: bool = None,
        delimiter_char: str = None, quote_char: str = None, null_value_string: str = None, timezone: str = None,
        pipe_format: Format = None):
+    _check_format_with_args_used(pipe_format, header=skip_header, delimiter_char=delimiter_char, csv_format=csv_format,
+                                 quote_char=quote_char, null_value_string=null_value_string)
+    if not pipe_format:
+        pipe_format = _get_format_from_args(header=skip_header, delimiter_char=delimiter_char, csv_format=csv_format,
+                                            quote_char=quote_char, null_value_string=null_value_string)
+
     import uuid
     import datetime
 
@@ -583,34 +628,35 @@ def __(db: dbs.RedshiftDB, target_table: str, csv_format: bool = None, skip_head
 
     columns = ''
     sed_stdin = ''
-    if pipe_format:
-        if isinstance(pipe_format, JsonlFormat):
-            columns = ' (' + ', '.join(['data']) + ')'
-            # escapes JSON escapings since PostgreSQL interprets C-escapes in TEXT mode
-            sed_stdin += "sed 's/\\\\/\\\\x5C/g' \\\n| "
-        elif isinstance(pipe_format, CsvFormat):
-            csv_format = True
-            if delimiter_char is None:
-                delimiter_char = pipe_format.delimiter_char
-            if quote_char is None:
-                quote_char = pipe_format.quote_char
-            if skip_header is None:
-                skip_header = pipe_format.header
-        else:
-            raise ValueError(f'Unsupported pipe_format for RedshiftDB: {pipe_format}')
-
     sql = f"COPY {target_table}{columns} FROM 's3://{db.aws_s3_bucket_name}/{tmp_file_name}' access_key_id '{db.aws_access_key_id}' secret_access_key '{db.aws_secret_access_key}'"
+    if isinstance(pipe_format, JsonlFormat):
+        columns = ' (' + ', '.join(['data']) + ')'
+        # escapes JSON escapings since PostgreSQL interprets C-escapes in TEXT mode
+        sed_stdin += "sed 's/\\\\/\\\\x5C/g' \\\n| "
 
-    if csv_format:
+    elif isinstance(pipe_format, CsvFormat):
+        csv_format = True
+        if delimiter_char is None:
+            delimiter_char = pipe_format.delimiter_char
+        if quote_char is None:
+            quote_char = pipe_format.quote_char
+        if skip_header is None:
+            skip_header = pipe_format.header
         sql += ' CSV'
-    if skip_header:
-        sql += ' HEADER'
-    if delimiter_char is not None:
-        sql += f" DELIMITER AS '{delimiter_char}'"
-    if null_value_string is not None:
-        sql += f" NULL AS '{null_value_string}'"
-    if quote_char is not None:
-        sql += f" QUOTE AS '{quote_char}'"
+        if pipe_format.header:
+            sql += ' HEADER'
+        if pipe_format.delimiter_char is not None:
+            sql += f" DELIMITER AS '{pipe_format.delimiter_char}'"
+        if pipe_format.null_value_string is not None:
+            sql += f" NULL AS '{pipe_format.null_value_string}'"
+        if pipe_format.quote_char is not None:
+            sql += f" QUOTE AS '{pipe_format.quote_char}'"
+
+    elif isinstance(pipe_format, NativeFormat):
+        pass
+
+    else:
+        raise ValueError(f'Unsupported pipe_format for RedshiftDB: {pipe_format}')
 
     return s3_write_command + ' &&\n\n' \
             + f'{sed_stdin}{query_command(db, timezone)} \\\n      --command="{sql}" \\\n  || /bin/false \\\n  ; RC=$?\n\n' \
@@ -623,30 +669,11 @@ def __(db: dbs.BigQueryDB, target_table: str, csv_format: bool = None, skip_head
        pipe_format: Format = None):
     assert db.gcloud_gcs_bucket_name, f"Please provide the 'gcloud_gcs_bucket_name' parameter to database '{db}' "
 
-    if csv_format or isinstance(pipe_format, CsvFormat):
-        bq_format = 'CSV'
-        file_extension = 'csv'
-        if isinstance(pipe_format, CsvFormat):
-            if delimiter_char is None:
-                delimiter_char = pipe_format.delimiter_char
-            if quote_char is None:
-                quote_char = pipe_format.quote_char
-            if skip_header is None:
-                skip_header = pipe_format.header
-    elif not pipe_format or isinstance(pipe_format, JsonlFormat):
-        bq_format = 'NEWLINE_DELIMITED_JSON'
-        file_extension = 'jsonl'
-    elif isinstance(pipe_format, AvroFormat):
-        bq_format = 'AVRO'
-        file_extension = 'avro'
-    elif isinstance(pipe_format, ParquetFormat):
-        bq_format = 'PARQUET'
-        file_extension = 'parquet'
-    elif isinstance(pipe_format, OrcFormat):
-        bq_format = 'ORC'
-        file_extension = 'orc'
-    else:
-        raise ValueError(f'Unsupported pipe_format for BigQueryDB: {pipe_format}')
+    _check_format_with_args_used(pipe_format, header=skip_header, delimiter_char=delimiter_char, csv_format=csv_format,
+                                 quote_char=quote_char, null_value_string=null_value_string)
+    if not pipe_format:
+        pipe_format = _get_format_from_args(header=skip_header, delimiter_char=delimiter_char, csv_format=csv_format,
+                                            quote_char=quote_char, null_value_string=null_value_string)
 
     import uuid
     import datetime
@@ -667,14 +694,35 @@ def __(db: dbs.BigQueryDB, target_table: str, csv_format: bool = None, skip_head
                        + (f' --skip_leading_rows=1' if skip_header else '')
                        )
 
-    bq_load_command += + f' --source_format={bq_format}'
+    if isinstance(pipe_format, CsvFormat):
+        bq_load_command += + f' --source_format=CSV'
+        file_extension = 'csv'
 
-    if delimiter_char is not None:
-        bq_load_command += f" --field_delimiter='{delimiter_char}'"
-    if null_value_string is not None:
-        bq_load_command += f" --null_marker='{null_value_string}'"
-    if quote_char is not None:
-        bq_load_command += f" --quote='{quote_char}'"
+        if pipe_format.delimiter_char is not None:
+            bq_load_command += f" --field_delimiter='{pipe_format.delimiter_char}'"
+        if pipe_format.null_value_string is not None:
+            bq_load_command += f" --null_marker='{pipe_format.null_value_string}'"
+        if pipe_format.quote_char is not None:
+            bq_load_command += f" --quote='{pipe_format.quote_char}'"
+
+    elif isinstance(pipe_format, JsonlFormat) or isinstance(pipe_format, NativeFormat):
+        bq_load_command += + f' --source_format=NEWLINE_DELIMITED_JSON'
+        file_extension = 'jsonl'
+
+    elif isinstance(pipe_format, AvroFormat):
+        bq_load_command += + f' --source_format=AVRO'
+        file_extension = 'avro'
+
+    elif isinstance(pipe_format, ParquetFormat):
+        bq_load_command += + f' --source_format=PARQUET'
+        file_extension = 'parquet'
+
+    elif isinstance(pipe_format, OrcFormat):
+        bq_load_command += + f' --source_format=ORC'
+        file_extension = 'orc'
+
+    else:
+        raise ValueError(f'Unsupported pipe_format for BigQueryDB: {pipe_format}')
 
     bq_load_command += f" '{target_table}'  gs://{db.gcloud_gcs_bucket_name}/{tmp_file_name}"
 
@@ -690,28 +738,20 @@ def __(db: dbs.BigQueryDB, target_table: str, csv_format: bool = None, skip_head
 def __(db: dbs.SqlcmdSQLServerDB, target_table: str, csv_format: bool = None, skip_header: bool = None,
        delimiter_char: str = None, quote_char: str = None, null_value_string: str = None, timezone: str = None,
        pipe_format: Format = None):
-    assert all(v is None for v in [quote_char, timezone]), "unimplemented parameter for SqlcmdSQLServerDB"
+    _check_format_with_args_used(pipe_format, header=skip_header, delimiter_char=delimiter_char, csv_format=csv_format,
+                                 quote_char=quote_char, null_value_string=null_value_string)
+    if not pipe_format:
+        pipe_format = _get_format_from_args(header=skip_header, delimiter_char=delimiter_char, csv_format=csv_format,
+                                            quote_char=quote_char, null_value_string=null_value_string)
 
-    if pipe_format:
-        if isinstance(pipe_format, CsvFormat):
-            csv_format = True
-            if delimiter_char is None:
-                delimiter_char = pipe_format.delimiter_char
-            if quote_char is None:
-                quote_char = pipe_format.quote_char
-            if skip_header is None:
-                skip_header = pipe_format.header
-        else:
-            raise ValueError(f'Unsupported pipe_format for SqlcmdSQLServerDB: {pipe_format}')
+    if isinstance(pipe_format, CsvFormat):
+        if pipe_format.quote_char:
+            raise ValueError('pipe_format.quote_char is not supported for SqlcmdSQLServerDB')
     else:
-        if csv_format == False:
-            raise ValueError('The parameter csv_format must be true or none when the db_alias referres to a SQL Server (SqlcmdSQLServerDB)')
+        raise ValueError(f'Unsupported pipe_format for SqlcmdSQLServerDB: {pipe_format}')
 
-    if null_value_string is not None and null_value_string != '':
+    if pipe_format.null_value_string is not None and pipe_format.null_value_string != '':
         raise ValueError("The parameter null_value_string must be None or an empty string ('') when the db_alias referres to a SQL Server (SqlcmdSQLServerDB)")
-
-    if not delimiter_char:
-        delimiter_char = ','
 
     if db.host:
         # connection to DB, see: https://docs.microsoft.com/en-us/sql/ssms/scripting/sqlcmd-connect-to-the-database-engine?view=sql-server-ver15
@@ -743,8 +783,8 @@ def __(db: dbs.SqlcmdSQLServerDB, target_table: str, csv_format: bool = None, sk
             + (' -u' if db.trust_server_certificate else '')
             + (f' -d {db.database}' if db.database else '')
             + ' -c'
-            + (f' -t {delimiter_char}' if delimiter_char != '\t' else '')
-            + (' -F2' if skip_header else '')
+            + (f' -t {pipe_format.delimiter_char or ","}' if pipe_format.delimiter_char != '\t' else '')
+            + (' -F2' if pipe_format.header else '')
             # removes the temporary file
             + f'; rm -f "${{TEMP_STDIN}}" > /dev/null; '
             + '}')
