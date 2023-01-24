@@ -150,3 +150,21 @@ def test_postgres_sqlalchemy(postgres_db):
     """
     from ..db_test_helper import _test_sqlalchemy
     _test_sqlalchemy(postgres_db)
+
+
+def test_postgres_connect(postgres_db):
+    """
+    A simple test to check if the connect API works.
+    """
+    connection = POSTGRES_DB.connect()
+    cursor = connection.cursor()
+    try:
+        for row in cursor.execute('SELECT 1'):
+            assert row[0] == 1
+        connection.commit()
+    except Exception as e:
+        connection.rollback()
+        raise e
+    finally:
+        cursor.close()
+        connection.close()
