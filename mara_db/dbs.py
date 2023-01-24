@@ -28,6 +28,37 @@ class DB:
         """Returns the SQLAlchemy url for a database"""
         raise NotImplementedError(f'Please implement sqlalchemy_url for type "{self.__class__.__name__}"')
 
+    def connect(self) -> object:
+        """
+        Constructor for creating a connection to the database.
+        The returned connection object is PIP-249 compatible (DB-API).
+
+        See also: https://peps.python.org/pep-0249/#connection-objects
+        """
+        raise NotImplementedError(f'Please implement connect for type "{self.__class__.__name__}"')
+
+    def cursor_context(self) -> object:
+        """
+        A single iteration with a cursor context. When the iteration is
+        closed, a commit is executed on the cursor.
+
+        Example usage:
+           with db.cursor_context() as c:
+             c.execute('UPDATE table SET table.c1 = 1 WHERE table.id = 5')
+        """
+        connection = self.connect()
+        try:
+            cursor = connection.cursor()
+            yield cursor
+        except Exception:
+            connection.rollback()
+            raise
+        else:
+            connection.commit()
+        finally:
+            cursor.close()
+            connection.close()
+
 
 class PostgreSQLDB(DB):
     def __init__(self, host: str = None, port: int = None, database: str = None,
@@ -53,6 +84,11 @@ class PostgreSQLDB(DB):
     def sqlalchemy_url(self):
         return (f'postgresql+psycopg2://{self.user}{":" + self.password if self.password else ""}@{self.host}'
                 + f'{":" + str(self.port) if self.port else ""}/{self.database}')
+    
+    def connect(self) -> 'psycopg2.extensions.cursor':
+        import psycopg2
+        return psycopg2.connect(dbname=self.database, user=self.user, password=self.password,
+                                host=self.host, port=self.port)
 
 
 class RedshiftDB(PostgreSQLDB):
@@ -106,6 +142,14 @@ class BigQueryDB(DB):
                 url += '/' + self.dataset
         return url
 
+    def connect(self):
+        from google.oauth2.service_account import Credentials
+        from google.cloud.bigquery.client import Client
+        from google.cloud.bigquery.dbapi.connection import Connection
+        credentials = Credentials.from_service_account_file(self.service_account_json_file_name)
+        client = Client(project=credentials.project_id, credentials=credentials, location=self.location)
+        return Connection(client)
+
 
 class MysqlDB(DB):
     def __init__(self, host: str = None, port: int = None, database: str = None,
@@ -117,6 +161,12 @@ class MysqlDB(DB):
         self.password = password
         self.ssl = ssl
         self.charset = charset
+    
+    def connect(self) -> 'MySQLdb.cursors.Cursor':
+        import MySQLdb.cursors # requires https://github.com/PyMySQL/mysqlclient-python
+        return MySQLdb.connect(
+            host=self.host, user=self.user, passwd=self.password, db=self.database, port=self.port,
+            cursorclass=MySQLdb.cursors.Cursor)
 
 
 class SQLServerDB(DB):
@@ -155,6 +205,14 @@ class SQLServerDB(DB):
         port = self.port if self.port else 1433
         driver = self.odbc_driver.replace(' ','+')
         return f'mssql+pyodbc://{self.user}:{urllib.parse.quote(self.password)}@{self.host}:{port}/{self.database}?driver={driver}'
+
+    def connect(self) -> 'pyodbc.Cursor':
+        import pyodbc # requires https://github.com/mkleehammer/pyodbc/wiki/Install
+        server = self.host
+        if self.port: # connecting via TCP/IP port
+            server = f"{server},{self.port}"
+        return pyodbc.connect(f"DRIVER={{{self.odbc_driver}}};SERVER={server};DATABASE={self.database};UID={self.user};PWD={self.password}" \
+                                + (';Encrypt=YES;TrustServerCertificate=YES' if self.trust_server_certificate else ''))
 
 
 class SqshSQLServerDB(SQLServerDB):
@@ -200,6 +258,7 @@ class SqlcmdSQLServerDB(SQLServerDB):
         return super().sqlalchemy_url \
                 + ('&TrustServerCertificate=yes' if self.trust_server_certificate else '')
 
+
 class OracleDB(DB):
     def __init__(self, host: str = None, port: int = 0, endpoint: str = None, user: str = None, password: str = None):
         self.host = host
@@ -216,6 +275,10 @@ class SQLiteDB(DB):
     @property
     def sqlalchemy_url(self):
         return f'sqlite:///{self.file_name}'
+    
+    def connect(self):
+        import sqlite3
+        return sqlite3.connect(database=self.file_name)
 
 
 class SnowflakeDB(DB):
@@ -267,3 +330,11 @@ class DatabricksDB(DB):
     @property
     def sqlalchemy_url(self):
         return f"databricks+connector://token:{self.access_token}@{self.host}:443/"
+
+    def connect(self):
+        from databricks_dbapi import odbc
+        return odbc.connect(
+            host=self.host,
+            http_path=self.http_path,
+            token=self.access_token,
+            driver_path=self.odbc_driver_path)

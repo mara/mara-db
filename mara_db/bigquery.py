@@ -35,18 +35,12 @@ def bigquery_client(db: typing.Union[str, mara_db.dbs.BigQueryDB]) -> 'google.cl
 def bigquery_cursor_context(db: typing.Union[str, mara_db.dbs.BigQueryDB]) \
         -> 'google.cloud.bigquery.dbapi.cursor.Cursor':
     """Creates a context with a bigquery cursor for a database alias"""
-    client = bigquery_client(db)
+    if isinstance(db, str):
+        db = mara_db.dbs.db(db)
 
-    from google.cloud.bigquery.dbapi.connection import Connection
+    assert (isinstance(db, mara_db.dbs.BigQueryDB))
 
-    connection = Connection(client)
-    cursor = connection.cursor()  # type: google.cloud.bigquery.dbapi.cursor.Cursor
-    try:
-        yield cursor
-        connection.commit()
-    except Exception as e:
-        connection.close()
-        raise e
+    return db.cursor_context()
 
 
 def create_bigquery_table_from_postgresql_query(
