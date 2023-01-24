@@ -2,6 +2,7 @@
 
 import contextlib
 import typing
+from warnings import warn
 
 import mara_db.dbs
 import sys
@@ -35,6 +36,8 @@ def bigquery_client(db: typing.Union[str, mara_db.dbs.BigQueryDB]) -> 'google.cl
 def bigquery_cursor_context(db: typing.Union[str, mara_db.dbs.BigQueryDB]) \
         -> 'google.cloud.bigquery.dbapi.cursor.Cursor':
     """Creates a context with a bigquery cursor for a database alias"""
+    warn('Function bigquery_cursor_context(db) is deprecated. Please use db.cursor_context() instead.')
+
     if isinstance(db, str):
         db = mara_db.dbs.db(db)
 
