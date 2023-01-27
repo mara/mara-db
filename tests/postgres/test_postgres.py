@@ -74,7 +74,7 @@ def test_postgres_ddl(postgres_db):
 )
 def test_postgres_shell_copy_from_stdin_csv_noheader(postgres_db, seed_file):
     # delete rows from table, make sure that the last matrix test does not mess up this test
-    command = execute_sql_statement_to_stdout_csv_command(postgres_db, "DELETE FROM names")
+    command = execute_sql_statement_command(postgres_db, "DELETE FROM names")
     (exitcode, pstdout) = subprocess.getstatusoutput(command)
     assert exitcode == 0
 
@@ -117,7 +117,7 @@ def test_postgres_shell_copy_from_stdin_csv_noheader(postgres_db, seed_file):
 )
 def test_postgres_shell_copy_from_stdin_csv_skipheader(postgres_db, seed_file):
     # delete rows from table, make sure that the last matrix test does not mess up this test
-    command = execute_sql_statement_to_stdout_csv_command(postgres_db, "DELETE FROM names_with_header")
+    command = execute_sql_statement_command(postgres_db, "DELETE FROM names_with_header")
     (exitcode, pstdout) = subprocess.getstatusoutput(command)
     assert exitcode == 0
 

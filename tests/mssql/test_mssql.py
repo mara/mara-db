@@ -146,7 +146,7 @@ def test_mssql_sqlcmd_shell_copy_to_stout(mssql_sqlcmd_db):
 )
 def test_mssql_sqlcmd_shell_copy_from_stdin_csv_noheader(mssql_sqlcmd_db, seed_file):
     # delete rows from table, make sure that the last matrix test does not mess up this test
-    command = execute_sql_statement_to_stdout_csv_command(mssql_sqlcmd_db, "DELETE FROM names")
+    command = execute_sql_statement_command(mssql_sqlcmd_db, "DELETE FROM names")
     (exitcode, pstdout) = subprocess.getstatusoutput(command)
     assert exitcode == 0
 
@@ -184,7 +184,7 @@ def test_mssql_sqlcmd_shell_copy_from_stdin_csv_noheader(mssql_sqlcmd_db, seed_f
 )
 def test_mssql_sqlcmd_shell_copy_from_stdin_csv_skipheader(mssql_sqlcmd_db, seed_file):
     # delete rows from table, make sure that the last matrix test does not mess up this test
-    command = execute_sql_statement_to_stdout_csv_command(mssql_sqlcmd_db, "DELETE FROM names_with_header")
+    command = execute_sql_statement_command(mssql_sqlcmd_db, "DELETE FROM names_with_header")
     (exitcode, pstdout) = subprocess.getstatusoutput(command)
     assert exitcode == 0
 

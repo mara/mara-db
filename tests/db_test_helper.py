@@ -39,4 +39,4 @@ def _test_sqlalchemy(db):
         # run a SELECT 1.   use a core select() so that
         # the SELECT of a scalar value without a table is
         # appropriately formatted for the backend
-        assert conn.scalar(select([1])) == 1
+        assert conn.scalar(select(1)) == 1
