@@ -4,7 +4,7 @@ import typing
 from mara_db import dbs
 
 
-def databases() -> {str: dbs.DB}:
+def databases() -> typing.Dict[str, dbs.DB]:
     """The list of database connections to use, by alias"""
     return {}
 
