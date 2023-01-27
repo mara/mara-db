@@ -49,3 +49,11 @@ def test_databricks_connect():
     """
     from .db_test_helper import _test_connect
     _test_connect(DATABRICKS_DB)
+
+
+def test_databricks_cursor_context():
+    """
+    A simple test to check if the cursor context of the db works.
+    """
+    from .db_test_helper import _test_cursor_context
+    _test_cursor_context(DATABRICKS_DB)

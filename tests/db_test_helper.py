@@ -26,7 +26,7 @@ def db_replace_placeholders(db: dbs.DB, docker_ip: str, docker_port: int) -> dbs
 Basic tests which can be used for different DB engines.
 """
 
-def _test_sqlalchemy(db):
+def _test_sqlalchemy(db: dbs.DB):
     """
     A simple test to check if the SQLAlchemy connection works
     """
@@ -41,7 +41,7 @@ def _test_sqlalchemy(db):
         # appropriately formatted for the backend
         assert conn.scalar(select(1)) == 1
 
-def _test_connect(db):
+def _test_connect(db: dbs.DB):
     connection = db.connect()
     cursor = connection.cursor()
     try:
@@ -55,3 +55,9 @@ def _test_connect(db):
     finally:
         cursor.close()
         connection.close()
+
+def _test_cursor_context(db: dbs.DB):
+    with db.cursor_context() as cursor:
+        cursor.execute('SELECT 1')
+        row = cursor.fetchone()
+        assert row[0] == 1

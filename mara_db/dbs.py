@@ -1,5 +1,6 @@
 """Abstract definition of database connections"""
 
+import contextlib
 import functools
 import pathlib
 
@@ -37,6 +38,7 @@ class DB:
         """
         raise NotImplementedError(f'Please implement connect for type "{self.__class__.__name__}"')
 
+    @contextlib.contextmanager
     def cursor_context(self) -> object:
         """
         A single iteration with a cursor context. When the iteration is
@@ -50,11 +52,10 @@ class DB:
         try:
             cursor = connection.cursor()
             yield cursor
+            connection.commit()
         except Exception:
             connection.rollback()
             raise
-        else:
-            connection.commit()
         finally:
             cursor.close()
             connection.close()
