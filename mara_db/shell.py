@@ -267,10 +267,11 @@ def __(db: dbs.PostgreSQLDB, header: bool = None, footer: bool = None,
 
     if isinstance(pipe_format, CsvFormat):
         assert not (pipe_format.footer or pipe_format.header), 'unsupported when format is CsvFormat'
-        return r" sed '/\;/q' | sed 's/\;.*//' " + '\\\n' \
-               + f'''| (echo "COPY (" && cat && echo ") TO STDOUT WITH CSV  DELIMITER '{pipe_format.delimiter_char or '\t'}' ") \\\n''' \
-               + '  | ' + query_command(db, echo_queries=False) + ' --variable=FETCH_COUNT=10000 \\\n' \
-               + "  | sed '/^$/d'"  # remove empty lines
+        delimiter_char = pipe_format.delimiter_char or ','
+        return (r" sed '/\;/q' | sed 's/\;.*//' " + '\\\n'
+               + f'''| (echo "COPY (" && cat && echo ") TO STDOUT WITH CSV  DELIMITER '{delimiter_char}' ") \\\n'''
+               + '  | ' + query_command(db, echo_queries=False) + ' --variable=FETCH_COUNT=10000 \\\n'
+               + "  | sed '/^$/d'")  # remove empty lines
 
     elif isinstance(pipe_format, NativeFormat):
         header_argument = '--tuples-only' if not header else ''

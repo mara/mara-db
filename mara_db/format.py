@@ -64,15 +64,16 @@ class OrcFormat(Format):
 
 
 
-def _check_format_with_args_used(pipe_format: Format, header: bool = None, footer: bool = None, delimiter_char: str = None, csv_format: bool = None):
+def _check_format_with_args_used(pipe_format: Format, header: bool = None, footer: bool = None, delimiter_char: str = None, csv_format: bool = None,
+                                 quote_char: str = None, null_value_string: str = None):
     if pipe_format:
-        assert all(v is None for v in [header, footer, delimiter_char, csv_format]), "You cannot pass format and an old parameter (header, footer, delimiter, csv_format) at the same time"
+        assert all(v is None for v in [header, footer, delimiter_char, csv_format, quote_char, null_value_string]), "You cannot pass format and an old parameter (header, footer, delimiter, csv_format, quote_char, null_value_string) at the same time"
 
 
 def _get_format_from_args(header: bool = None, footer: bool = None, delimiter_char: str = None, csv_format: bool = None,
                           quote_char: str = None, null_value_string: str = None) -> Format:
     """A internal method handling old parameter settings"""
-    if csv_format:
+    if csv_format or delimiter_char and csv_format is None:
         return CsvFormat(delimiter_char=delimiter_char,
                          quote_char=quote_char,
                          header=header,
