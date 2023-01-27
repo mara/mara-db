@@ -585,7 +585,8 @@ def __(db: dbs.PostgreSQLDB, target_table: str, csv_format: bool = None, skip_he
     if isinstance(pipe_format, JsonlFormat):
         columns = ' (' + ', '.join(['data']) + ')'
         # escapes JSON escapings since PostgreSQL interprets C-escapes in TEXT mode
-        sed_stdin += "sed 's/\\\\/\\\\x5C/g' \\\n| "
+        nl = '\n'
+        sed_stdin += fr"sed 's/\\/\\x5C/g' \{nl}  | "
 
     elif isinstance(pipe_format, CsvFormat):
         sql += ' CSV'
@@ -633,7 +634,8 @@ def __(db: dbs.RedshiftDB, target_table: str, csv_format: bool = None, skip_head
     if isinstance(pipe_format, JsonlFormat):
         columns = ' (' + ', '.join(['data']) + ')'
         # escapes JSON escapings since PostgreSQL interprets C-escapes in TEXT mode
-        sed_stdin += "sed 's/\\\\/\\\\x5C/g' \\\n| "
+        nl = '\n'
+        sed_stdin += fr"sed 's/\\/\\x5C/g' \{nl}| "
 
     elif isinstance(pipe_format, CsvFormat):
         csv_format = True
