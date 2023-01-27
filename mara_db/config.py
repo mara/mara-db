@@ -6,7 +6,7 @@ from mara_db import dbs
 
 def databases() -> {str: dbs.DB}:
     """The list of database connections to use, by alias"""
-    return {'mara': dbs.PostgreSQLDB(host='localhost', database='mara', user='root')}
+    return {}
 
 
 def default_timezone() -> str:
