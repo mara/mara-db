@@ -1,4 +1,5 @@
 """Different formats for piping"""
+from typing import Optional
 
 
 class Format:
@@ -21,7 +22,7 @@ class CsvFormat(Format):
     """
     CSV file format. See https://tools.ietf.org/html/rfc4180
     """
-    def __init__(self, delimiter_char: str = None, quote_char: str = None, header: bool = None, footer: bool = False, null_value_string: str = None):
+    def __init__(self, delimiter_char: str = ',', quote_char: Optional[str] = None, header: bool = False, footer: bool = False, null_value_string: Optional[str] = None):
         """
         CSV file format. See https://tools.ietf.org/html/rfc4180
 
@@ -32,10 +33,10 @@ class CsvFormat(Format):
             footer: Whether a footer will be included or not. False by default.
             null_value_string: The string used to indicate NULL.
         """
-        self.delimiter_char = delimiter_char
+        self.delimiter_char = delimiter_char or ','
         self.quote_char = quote_char
-        self.header = header
-        self.footer = footer
+        self.header = header or False
+        self.footer = footer or False
         self.null_value_string = null_value_string
 
 
@@ -64,14 +65,14 @@ class OrcFormat(Format):
 
 
 
-def _check_format_with_args_used(pipe_format: Format, header: bool = None, footer: bool = None, delimiter_char: str = None, csv_format: bool = None,
-                                 quote_char: str = None, null_value_string: str = None):
+def _check_format_with_args_used(pipe_format: Format, header: Optional[bool] = None, footer: Optional[bool] = None, delimiter_char: Optional[str] = None,
+                                 csv_format: Optional[bool] = None, quote_char: Optional[str] = None, null_value_string: Optional[str] = None):
     if pipe_format:
         assert all(v is None for v in [header, footer, delimiter_char, csv_format, quote_char, null_value_string]), "You cannot pass format and an old parameter (header, footer, delimiter, csv_format, quote_char, null_value_string) at the same time"
 
 
-def _get_format_from_args(header: bool = None, footer: bool = None, delimiter_char: str = None, csv_format: bool = None,
-                          quote_char: str = None, null_value_string: str = None) -> Format:
+def _get_format_from_args(header: Optional[bool] = None, footer: Optional[bool] = None, delimiter_char: Optional[str] = None, csv_format: Optional[bool] = None,
+                          quote_char: Optional[str] = None, null_value_string: Optional[str] = None) -> Format:
     """A internal method handling old parameter settings"""
     if csv_format or delimiter_char and csv_format is None:
         return CsvFormat(delimiter_char=delimiter_char,
