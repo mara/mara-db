@@ -63,8 +63,9 @@ def test_mssql_connect(mssql_db):
     connection = MSSQL_DB.connect()
     cursor = connection.cursor()
     try:
-        for row in cursor.execute('SELECT 1'):
-            assert row[0] == 1
+        cursor.execute('SELECT 1')
+        row = cursor.fetchone()
+        assert row[0] == 1
         connection.commit()
     except Exception as e:
         connection.rollback()
