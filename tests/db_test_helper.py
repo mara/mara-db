@@ -40,3 +40,18 @@ def _test_sqlalchemy(db):
         # the SELECT of a scalar value without a table is
         # appropriately formatted for the backend
         assert conn.scalar(select(1)) == 1
+
+def _test_connect(db):
+    connection = db.connect()
+    cursor = connection.cursor()
+    try:
+        cursor.execute('SELECT 1')
+        row = cursor.fetchone()
+        assert row[0] == 1
+        connection.commit()
+    except Exception as e:
+        connection.rollback()
+        raise e
+    finally:
+        cursor.close()
+        connection.close()

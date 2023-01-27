@@ -47,16 +47,5 @@ def test_databricks_connect():
     """
     A simple test to check if the connect API works.
     """
-    connection = DATABRICKS_DB.connect()
-    cursor = connection.cursor()
-    try:
-        cursor.execute('SELECT 1')
-        row = cursor.fetchone()
-        assert row[0] == 1
-        connection.commit()
-    except Exception as e:
-        connection.rollback()
-        raise e
-    finally:
-        cursor.close()
-        connection.close()
+    from .db_test_helper import _test_connect
+    _test_connect(DATABRICKS_DB)
