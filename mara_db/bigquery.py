@@ -2,6 +2,7 @@
 
 import contextlib
 import typing
+from warnings import warn
 
 import mara_db.dbs
 import sys
@@ -35,18 +36,14 @@ def bigquery_client(db: typing.Union[str, mara_db.dbs.BigQueryDB]) -> 'google.cl
 def bigquery_cursor_context(db: typing.Union[str, mara_db.dbs.BigQueryDB]) \
         -> 'google.cloud.bigquery.dbapi.cursor.Cursor':
     """Creates a context with a bigquery cursor for a database alias"""
-    client = bigquery_client(db)
+    warn('Function bigquery_cursor_context(db) is deprecated. Please use db.cursor_context() instead.')
 
-    from google.cloud.bigquery.dbapi.connection import Connection
+    if isinstance(db, str):
+        db = mara_db.dbs.db(db)
 
-    connection = Connection(client)
-    cursor = connection.cursor()  # type: google.cloud.bigquery.dbapi.cursor.Cursor
-    try:
-        yield cursor
-        connection.commit()
-    except Exception as e:
-        connection.close()
-        raise e
+    assert (isinstance(db, mara_db.dbs.BigQueryDB))
+
+    return db.cursor_context()
 
 
 def create_bigquery_table_from_postgresql_query(

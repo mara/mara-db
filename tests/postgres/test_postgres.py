@@ -150,3 +150,19 @@ def test_postgres_sqlalchemy(postgres_db):
     """
     from ..db_test_helper import _test_sqlalchemy
     _test_sqlalchemy(postgres_db)
+
+
+def test_postgres_connect(postgres_db):
+    """
+    A simple test to check if the connect API works.
+    """
+    from ..db_test_helper import _test_connect
+    _test_connect(postgres_db)
+
+
+def test_postgres_cursor_context(postgres_db):
+    """
+    A simple test to check if the cursor context of the db works.
+    """
+    from ..db_test_helper import _test_cursor_context
+    _test_cursor_context(postgres_db)

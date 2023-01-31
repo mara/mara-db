@@ -2,6 +2,7 @@
 
 import contextlib
 import typing
+from warnings import warn
 
 import mara_db.dbs
 
@@ -9,23 +10,11 @@ import mara_db.dbs
 @contextlib.contextmanager
 def databricks_cursor_context(db: typing.Union[str, mara_db.dbs.DatabricksDB]) \
         -> 'databricks.sql.client.Cursor':
-    from databricks_dbapi import odbc
+    warn('Function databricks_cursor_context(db) is deprecated. Please use db.cursor_context() instead.')
 
     if isinstance(db, str):
         db = mara_db.dbs.db(db)
 
     assert (isinstance(db, mara_db.dbs.DatabricksDB))
 
-    connection = odbc.connect(
-        host=db.host,
-        http_path=db.http_path,
-        token=db.access_token,
-        driver_path=db.odbc_driver_path)
-
-    cursor = connection.cursor()  # type: databricks.sql.client.Cursor
-    try:
-        yield cursor
-        connection.commit()
-    except Exception as e:
-        connection.close()
-        raise e
+    return db.cursor_context()

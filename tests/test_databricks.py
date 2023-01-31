@@ -41,3 +41,19 @@ def test_databricks_sqlalchemy():
     engine = sqlalchemy_engine.engine(DATABRICKS_DB)
     with engine.connect() as con:
         con.execute(statement = text("SELECT 1"))
+
+
+def test_databricks_connect():
+    """
+    A simple test to check if the connect API works.
+    """
+    from .db_test_helper import _test_connect
+    _test_connect(DATABRICKS_DB)
+
+
+def test_databricks_cursor_context():
+    """
+    A simple test to check if the cursor context of the db works.
+    """
+    from .db_test_helper import _test_cursor_context
+    _test_cursor_context(DATABRICKS_DB)

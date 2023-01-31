@@ -56,6 +56,22 @@ def test_mssql_sqlalchemy(mssql_db):
     _test_sqlalchemy(mssql_db)
 
 
+def test_mssql_connect(mssql_db):
+    """
+    A simple test to check if the connect API works.
+    """
+    from ..db_test_helper import _test_connect
+    _test_connect(mssql_db)
+
+
+def test_mssql_cursor_context(mssql_db):
+    """
+    A simple test to check if the cursor context of the db works.
+    """
+    from ..db_test_helper import _test_cursor_context
+    _test_cursor_context(mssql_db)
+
+
 
 """
 #################################################################################################################################
