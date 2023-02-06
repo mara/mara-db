@@ -167,9 +167,11 @@ def __(db: dbs.SQLServerDB):
     import mara_db.sqlserver
     with mara_db.sqlserver.sqlserver_cursor_context(db) as cursor:
         cursor.execute("""
-SELECT DISTINCT OBJECT_SCHEMA_NAME(f.parent_object_id) AS schema_name
+SELECT DISTINCT fpos.name AS schema_name
 FROM sys.foreign_keys AS f
 INNER JOIN sys.foreign_key_columns AS fc ON f.object_id = fc.constraint_object_id
+INNER JOIN sys.objects AS fpo ON fpo.object_id = f.parent_object_id
+INNER JOIN sys.schemas AS fpos ON fpos.schema_id = fpo.schema_id
 """)
         return [row[0] for row in cursor.fetchall()]
 
