@@ -17,4 +17,4 @@ def databricks_cursor_context(db: typing.Union[str, mara_db.dbs.DatabricksDB]) \
 
     assert (isinstance(db, mara_db.dbs.DatabricksDB))
 
-    return db.cursor_context()
+    return mara_db.dbs.cursor_context(db)

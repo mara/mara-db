@@ -15,6 +15,10 @@ DBs
 
 .. autofunction:: db
 
+.. autofunction:: connect
+
+.. autofunction:: cursor_context
+
 
 Auto migration
 --------------

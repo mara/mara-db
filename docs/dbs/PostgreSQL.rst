@@ -72,13 +72,3 @@ Configuration
     :special-members: __init__
     :inherited-members:
     :members:
-
-
-Cursor context
-~~~~~~~~~~~~~~
-
-.. module:: mara_db.postgresql
-    :noindex:
-
-.. autofunction:: postgres_cursor_context
-    :noindex:

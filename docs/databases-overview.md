@@ -36,17 +36,17 @@ Function support matrix
 
 Shows which functions are supported with which database engine:
 
-| Configuration class | Querying | Write STDOUT | Read STDIN | Cursor | UI schema support |
-| ------------------- | -------- | ------------ | ---------- | ------ | ----------------- |
-| PostgreSQLDB        | Yes      | Yes          | Yes        | Yes    | Yes
-| RedshiftDB          | Yes      | Yes          | Yes        | Yes    | Yes
-| BigQueryDB          | Yes      | Yes          | Yes        | Yes    | *no foreign key support by engine*
-| DatabricksDB        | Yes      | Yes          | -          | Yes    |
-| MysqlDB             | Yes      | Yes          | -          | Yes    | Yes
-| SQLServerDB         | Yes      | Yes          | -          | Yes    | Yes
-| OracleDB            | Yes      | Yes          | -          | -      |
-| SnowflakeDB         | Yes      | Yes          | -          | -      |
-| SQLiteDB            | Yes      | Yes          | -          | -      |
+| Configuration class | Querying | Write STDOUT | Read STDIN | DB-API 2.0 | UI schema support |
+| ------------------- | -------- | ------------ | ---------- | ---------- | ----------------- |
+| PostgreSQLDB        | Yes      | Yes          | Yes        | Yes        | Yes
+| RedshiftDB          | Yes      | Yes          | Yes        | Yes        | Yes
+| BigQueryDB          | Yes      | Yes          | Yes        | Yes        | *no foreign key support by engine*
+| DatabricksDB        | Yes      | Yes          | -          | Yes        |
+| MysqlDB             | Yes      | Yes          | -          | Yes        | Yes
+| SQLServerDB         | Yes      | Yes          | -          | Yes        | Yes
+| OracleDB            | Yes      | Yes          | -          | -          |
+| SnowflakeDB         | Yes      | Yes          | -          | -          |
+| SQLiteDB            | Yes      | Yes          | -          | Yes        |
 
 *Write STDOUT* gives the possibility to write a query to STDOUT
 

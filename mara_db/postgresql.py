@@ -17,4 +17,4 @@ def postgres_cursor_context(db: typing.Union[str, mara_db.dbs.PostgreSQLDB]) -> 
 
     assert (isinstance(db, mara_db.dbs.PostgreSQLDB))
 
-    return db.cursor_context()
+    return mara_db.dbs.cursor_context(db)

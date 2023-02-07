@@ -84,14 +84,6 @@ Configuration
     :members:
 
 
-Cursor context
-~~~~~~~~~~~~~~
-
-.. module:: mara_db.bigquery
-    :noindex:
-
-.. autofunction:: bigquery_cursor_context
-
 General helper functions
 ~~~~~~~~~~~~~~~~~~~~~~~~
 

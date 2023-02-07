@@ -74,12 +74,3 @@ Configuration
     :special-members: __init__
     :inherited-members:
     :members:
-
-
-Cursor context
-~~~~~~~~~~~~~~
-
-.. module:: mara_db.databricks
-    :noindex:
-
-.. autofunction:: databricks_cursor_context

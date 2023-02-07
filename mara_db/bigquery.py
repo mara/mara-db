@@ -43,7 +43,7 @@ def bigquery_cursor_context(db: typing.Union[str, mara_db.dbs.BigQueryDB]) \
 
     assert (isinstance(db, mara_db.dbs.BigQueryDB))
 
-    return db.cursor_context()
+    return mara_db.dbs.cursor_context(db)
 
 
 def create_bigquery_table_from_postgresql_query(

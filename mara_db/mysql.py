@@ -17,4 +17,4 @@ def mysql_cursor_context(db: typing.Union[str, mara_db.dbs.MysqlDB]) -> 'MySQLdb
 
     assert (isinstance(db, mara_db.dbs.MysqlDB))
 
-    return db.cursor_context()
+    return mara_db.dbs.cursor_context(db)

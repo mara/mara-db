@@ -42,7 +42,7 @@ def _test_sqlalchemy(db: dbs.DB):
         assert conn.scalar(select(1)) == 1
 
 def _test_connect(db: dbs.DB):
-    connection = db.connect()
+    connection = dbs.connect(db)
     cursor = connection.cursor()
     try:
         cursor.execute('SELECT 1')
@@ -57,7 +57,7 @@ def _test_connect(db: dbs.DB):
         connection.close()
 
 def _test_cursor_context(db: dbs.DB):
-    with db.cursor_context() as cursor:
+    with dbs.cursor_context(db) as cursor:
         cursor.execute('SELECT 1')
         row = cursor.fetchone()
         assert row[0] == 1
