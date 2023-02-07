@@ -17,4 +17,4 @@ def sqlserver_cursor_context(db: typing.Union[str, mara_db.dbs.SQLServerDB]) -> 
 
     assert (isinstance(db, mara_db.dbs.SQLServerDB))
 
-    return db.cursor_context()
+    return mara_db.dbs.cursor_context(db)

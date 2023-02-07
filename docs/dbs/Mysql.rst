@@ -51,12 +51,3 @@ Configuration
     :special-members: __init__
     :inherited-members:
     :members:
-
-
-Cursor context
-~~~~~~~~~~~~~~
-
-.. module:: mara_db.mysql
-    :noindex:
-
-.. autofunction:: mysql_cursor_context
