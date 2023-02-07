@@ -6,6 +6,7 @@ Shell command generation for
 
 import shlex
 from functools import singledispatch
+from warnings import warn
 
 import sys
 from mara_db import dbs, config
@@ -49,6 +50,8 @@ def __(alias: str, timezone: str = None, echo_queries: bool = None):
 def __(db: dbs.PostgreSQLDB, timezone: str = None, echo_queries: bool = None):
     if echo_queries is None:
         echo_queries = config.default_echo_queries()
+    if timezone is not None:
+        warn("Parameter timezone is deprecated and will be removed in mara-db 5.0, see https://github.com/mara/mara-db/issues/44")
 
     return (f'PGTZ={timezone or config.default_timezone()} '
             + (f"PGPASSWORD='{db.password}' " if db.password else '')
@@ -69,6 +72,8 @@ def __(db: dbs.PostgreSQLDB, timezone: str = None, echo_queries: bool = None):
 def __(db: dbs.RedshiftDB, timezone: str = None, echo_queries: bool = None):
     if echo_queries is None:
         echo_queries = config.default_echo_queries()
+    if timezone is not None:
+        warn("Parameter timezone is deprecated and will be removed in mara-db 5.0, see https://github.com/mara/mara-db/issues/44")
 
     return (f'PGTZ={timezone or config.default_timezone()} '
             + (f"PGPASSWORD='{db.password}' " if db.password else '')
