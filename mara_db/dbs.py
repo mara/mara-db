@@ -274,7 +274,7 @@ class DatabricksDB(DB):
 
 
 @functools.singledispatch
-def connect(db: Union[str, DB], **kargs):
+def connect(db: object, **kargs):
     """
     Creating a connection to the database object DB-API 2.0 (PIP-249) compatible.
 
@@ -288,8 +288,8 @@ def connect(db: Union[str, DB], **kargs):
 
 
 @connect.register(str)
-def __(_db: str, **kargs):
-    return connect(db(_db), kargs=kargs)
+def __(alias: str, **kargs):
+    return connect(db(alias), **kargs)
 
 
 @connect.register(PostgreSQLDB)

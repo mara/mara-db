@@ -43,7 +43,7 @@ Shows which functions are supported with which database engine:
 | BigQueryDB          | Yes      | Yes          | Yes        | Yes        | *no foreign key support by engine*
 | DatabricksDB        | Yes      | Yes          | -          | Yes        |
 | MysqlDB             | Yes      | Yes          | -          | Yes        | Yes
-| SQLServerDB         | Yes      | Yes          | -          | Yes        | Yes
+| SQLServerDB         | Yes      | Yes          | Yes        | Yes        | Yes
 | OracleDB            | Yes      | Yes          | -          | -          |
 | SnowflakeDB         | Yes      | Yes          | -          | -          |
 | SQLiteDB            | Yes      | Yes          | -          | Yes        |
@@ -51,6 +51,36 @@ Shows which functions are supported with which database engine:
 *Write STDOUT* gives the possibility to write a query to STDOUT
 
 *Read STDIN* gives the possiblity to read a file to a predefined SQL table
+
+
+Format support
+--------------
+
+Shows the formats supported per database engine
+
+### Read STDIN
+
+| Configuration class | CSV | JsonL | Avro | Parquet | ORC |
+| ------------------- | ----| ----- | ---- | ------- | --- |
+| PostgreSQLDB        | Yes | Yes   | -    | -       | -   |
+| RedshiftDB          | Yes | Yes   | -    | -       | -   |
+| BigQueryDB          | Yes | Yes   | Yes  | Yes     | Yes |
+| SQLServerDB         | Yes | -     | -    | -       | -   |
+
+
+### Write STDOUT
+
+| Configuration class | CSV | JsonL | Avro | Parquet | ORC |
+| ------------------- | ----| ----- | ---- | ------- | --- |
+| PostgreSQLDB        | Yes | -     | -    | -       | -   |
+| RedshiftDB          | Yes | -     | -    | -       | -   |
+| BigQueryDB          | Yes | -     | -    | -       | -   |
+| DatabricksDB        | Yes | -     | -    | -       | -   |
+| MysqlDB             | Yes | -     | -    | -       | -   |
+| SQLServerDB         | Yes | -     | -    | -       | -   |
+| OracleDB            | Yes | -     | -    | -       | -   |
+| SnowflakeDB         | Yes | -     | -    | -       | -   |
+| SQLiteDB            | Yes | -     | -    | -       | -   |
 
 
 Copy matrix
