@@ -308,7 +308,7 @@ def __(db: dbs.BigQueryDB, header: bool = None, footer: bool = None, delimiter_c
         pass
 
     else:
-        raise ValueError(f'Unsupported pipe_format for MysqlDB: {pipe_format}')
+        raise ValueError(f'Unsupported pipe_format for BigQueryDB: {pipe_format}')
 
     remove_header = 'sed 1d'
     return query_command(db) + f' | {remove_header}'
