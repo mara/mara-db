@@ -1,5 +1,26 @@
 # Changelog
 
+## 4.9.0 (2023-02-07)
+
+### Breaking Changes
+
+- the implementation of the formats option (#56) required to do changes to the functions in `mara_db.shell`. In case you defined custom implementations, you will have to adjust them.
+
+### Feat :tada:
+
+- adding a functional API to get the DB-API 2.0 of a database (#71)
+- add option to specify multiple formats like Parquet, Avro and ORC (#56, #64)
+
+### Changes :rocket:
+- refactor the internally used cursor context logic to a more generic one (#68, #71)
+- a default database `mara` is not anymore defined (#67).
+- add deprecation warning when using parameter `timestamp` in query_command. This parameter will be removed in version 5.0. See #44.
+
+### Bugfixes :bug:
+
+- fix sqlalchemy_url for SQLServerDB
+- fix UI error when requesting schema view for Azure Synapse databases (#48)
+
 ## 4.8.0 (2022-09-01)
 
 ### Breaking Changes
