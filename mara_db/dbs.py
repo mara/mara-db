@@ -130,7 +130,7 @@ class SQLServerDB(DB):
         """
         if cls is SQLServerDB:
             # Here we define what happens when the class is directly created in code
-            # 
+            #
             # We defined here that class SqshSQLServerDB shall be used by default. In a newer
             # major version we could change this to SqlcmdSQLServerDB but we do not want to
             # introduce a breaking change here at this point.
@@ -179,7 +179,8 @@ class SqlcmdSQLServerDB(SQLServerDB):
 
         Args:
             quoted_identifier: If set to true, the SET option QUOTED_IDENTIFIER is set to ON, otherwise OFF.
-            protocol: can be tcp (TCP/IP connection), np (named pipe) or lcp (using shared memory). See as well: https://docs.microsoft.com/en-us/sql/ssms/scripting/sqlcmd-connect-to-the-database-engine?view=sql-server-ver15
+            protocol: can be tcp (TCP/IP connection), np (named pipe) or lcp (using shared memory).
+                      See as well: https://docs.microsoft.com/en-us/sql/ssms/scripting/sqlcmd-connect-to-the-database-engine?view=sql-server-ver15
             trust_server_certificate: Trust the server certificate without validation
         """
         super().__init__(host=host, port=port, database=database, user=user, password=password, odbc_driver=odbc_driver)
@@ -187,9 +188,9 @@ class SqlcmdSQLServerDB(SQLServerDB):
             if protocol not in ['tcp','np','lpc']:
                 raise ValueError(f'Not supported protocol: {protocol}')
             if protocol == 'tcp' and instance:
-                raise ValueError(f'You can not use protocol tcp with an instance name')
+                raise ValueError('You can not use protocol tcp with an instance name')
             if protocol in ['np','lcp'] and port:
-                raise ValueError(f'You can not use protocol np/lcp with a port number')
+                raise ValueError('You can not use protocol np/lcp with a port number')
         if instance is not None and port is not None:
             raise ValueError('You can only use instance or port, not both together')
         self.protocol = protocol
@@ -230,11 +231,13 @@ class SnowflakeDB(DB):
 
         Args:
             connection: The connection name definend in the snowsql configuration ~/.snowsql/config
-            account: The account identifier. See here: https://docs.snowflake.com/en/user-guide/admin-account-identifier.html
+            account: The account identifier.
+                     See here: https://docs.snowflake.com/en/user-guide/admin-account-identifier.html
             user: The user name
             password: The password of the user
             database: The database name
-            private_key_file: Path to private key file in PEM format used for key pair authentication. The private key file must be encrypted.
+            private_key_file: Path to private key file in PEM format used for key pair authentication.
+                              The private key file must be encrypted.
             private_key_passphrase: The passphrase for the private key file.
         """
         self.connection = connection
@@ -247,7 +250,8 @@ class SnowflakeDB(DB):
 
     @property
     def sqlalchemy_url(self):
-        assert all(v is not None for v in [self.account, self.user, self.password]), "sqlalchemy_url for SnowflakeDB requires a user, password and account"
+        assert all(v is not None for v in [self.account, self.user, self.password]), \
+            "sqlalchemy_url for SnowflakeDB requires a user, password and account"
         return (f'snowflake://{self.user}:{self.password}@{self.account}'
                 + (f'/{self.database}' if self.database else ''))
 
@@ -274,7 +278,7 @@ class DatabricksDB(DB):
 
 
 @functools.singledispatch
-def connect(db: object, **kargs):
+def connect(db: object, **kargs) -> object:
     """
     Creating a connection to the database object DB-API 2.0 (PIP-249) compatible.
 
@@ -288,7 +292,7 @@ def connect(db: object, **kargs):
 
 
 @connect.register(str)
-def __(alias: str, **kargs):
+def __(alias: str, **kargs) -> object:
     return connect(db(alias), **kargs)
 
 
@@ -300,7 +304,7 @@ def __(db, **kargs) -> 'psycopg2.extensions.cursor':
 
 
 @connect.register(BigQueryDB)
-def __(db, **kargs):
+def __(db, **kargs) -> object:
     from google.oauth2.service_account import Credentials
     from google.cloud.bigquery.client import Client
     from google.cloud.bigquery.dbapi.connection import Connection
@@ -328,13 +332,13 @@ def __(db, **kargs) -> 'pyodbc.Cursor':
 
 
 @connect.register(SQLiteDB)
-def __(db, **kargs):
+def __(db, **kargs) -> 'sqlite3.Connection':
     import sqlite3
     return sqlite3.connect(database=db.file_name)
 
 
 @connect.register(DatabricksDB)
-def __(db, **kargs):
+def __(db, **kargs) -> object:
     from databricks_dbapi import odbc
     return odbc.connect(
         host=db.host,

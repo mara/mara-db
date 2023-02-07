@@ -64,7 +64,6 @@ class OrcFormat(Format):
         pass
 
 
-
 def _check_format_with_args_used(pipe_format: Format, header: Optional[bool] = None, footer: Optional[bool] = None, delimiter_char: Optional[str] = None,
                                  csv_format: Optional[bool] = None, quote_char: Optional[str] = None, null_value_string: Optional[str] = None):
     if pipe_format:

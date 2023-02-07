@@ -15,7 +15,7 @@ import mara_db.dbs
 from .sqlalchemy_engine import engine
 
 
-def auto_migrate(engine: sqlalchemy.engine.Engine, models: [sqlalchemy.sql.schema.MetaData]):
+def auto_migrate(engine: sqlalchemy.engine.Engine, models: typing.List[sqlalchemy.sql.schema.MetaData]):
     """
     Compares a database with a list of defined orm models and applies the diff. Prints executed SQL statements to stdout.
 
