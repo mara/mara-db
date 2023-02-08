@@ -1,5 +1,9 @@
 # Changelog
 
+## 4.9.1 (2023-02-08)
+
+- hotfix :bug: issue with postgres cursor context (#72)
+
 ## 4.9.0 (2023-02-07)
 
 ### Breaking Changes
