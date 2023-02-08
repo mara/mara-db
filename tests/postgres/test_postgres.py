@@ -166,3 +166,17 @@ def test_postgres_cursor_context(postgres_db):
     """
     from ..db_test_helper import _test_cursor_context
     _test_cursor_context(postgres_db)
+
+
+def test_postgres_cursor_context_legacy(postgres_db):
+    """
+    Legacy call `postgres_cursor_context` test.
+    
+    Test shall be dropped in version 5.0
+    """
+    from mara_db.postgresql import postgres_cursor_context
+
+    with postgres_cursor_context(postgres_db) as cursor:
+        cursor.execute('SELECT 1')
+        row = cursor.fetchone()
+        assert row[0] == 1
