@@ -1,6 +1,5 @@
 """Easy access to BigQuery databases via google.cloud.bigquery"""
 
-import contextlib
 import typing
 from warnings import warn
 
@@ -32,7 +31,6 @@ def bigquery_client(db: typing.Union[str, mara_db.dbs.BigQueryDB]) -> 'google.cl
     return Client(project=credentials.project_id, credentials=credentials, location=db.location)
 
 
-@contextlib.contextmanager
 def bigquery_cursor_context(db: typing.Union[str, mara_db.dbs.BigQueryDB]) \
         -> 'google.cloud.bigquery.dbapi.cursor.Cursor':
     """Creates a context with a bigquery cursor for a database alias"""
