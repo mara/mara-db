@@ -6,7 +6,8 @@ class Format:
     """Base format definition"""
 
     def __repr__(self) -> str:
-        return (f'<{self.__class__.__name__}: '
+        return (f'<{self.__class__.__name__}'
+                + (': ' if any(var for var in vars(self)) else '')
                 + ', '.join([f'{var}={getattr(self, var)}'
                              for var in vars(self) if getattr(self, var)])
                 + '>')
