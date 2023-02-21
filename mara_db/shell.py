@@ -585,10 +585,12 @@ def __(db: dbs.PostgreSQLDB, target_table: str, csv_format: bool = None, skip_he
                                             quote_char=quote_char, null_value_string=null_value_string)
 
     columns = ''
+    if isinstance(pipe_format, formats.JsonlFormat):
+        columns = ' (' + ', '.join(['data']) + ')'
+
     sed_stdin = ''
     sql = f'COPY {target_table}{columns} FROM STDIN WITH'
     if isinstance(pipe_format, formats.JsonlFormat):
-        columns = ' (' + ', '.join(['data']) + ')'
         # escapes JSON escapings since PostgreSQL interprets C-escapes in TEXT mode
         nl = '\n'
         sed_stdin += fr"sed 's/\\/\\x5C/g' \{nl}  | "
