@@ -1,5 +1,12 @@
 # Changelog
 
+## 4.9.2 (2023-02-21)
+
+### Bugfixes :bug:
+
+- fix typo in depreciation warn messages and add warn category
+- fix JSONL data import into PostgreSQL db (#73)
+
 ## 4.9.1 (2023-02-08)
 
 - hotfix :bug: issue with postgres cursor context (#72)
