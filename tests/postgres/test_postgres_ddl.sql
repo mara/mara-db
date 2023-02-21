@@ -12,6 +12,6 @@ CREATE TABLE names_with_header
 
 CREATE TABLE accounts_json
 (
-    data jsond,
+    data jsonb,
     row BIGINT GENERATED ALWAYS AS IDENTITY
 );

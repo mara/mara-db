@@ -168,7 +168,7 @@ def test_postgres_shell_copy_from_stdin_jsonl(postgres_db, seed_file):
     command = f'cat {file_path} \\\n'
     command += '  | ' + shell.copy_from_stdin_command(postgres_db,
                             target_table='accounts_json',
-                            format=formats.JsonlFormat())
+                            pipe_format=formats.JsonlFormat())
     print(command)
 
     (exitcode, pstdout) = subprocess.getstatusoutput(command)
