@@ -3,7 +3,7 @@ import typing as t
 import subprocess
 import pathlib
 
-from mara_db import shell
+from mara_db import shell, formats
 
 from ..command_helper import *
 from ..db_test_helper import db_is_responsive, db_replace_placeholders
@@ -79,9 +79,10 @@ def test_postgres_shell_copy_from_stdin_csv_noheader(postgres_db, seed_file):
     assert exitcode == 0
 
     # reading csv file...
-    names_csv_file_path = str((pathlib.Path(__file__).parent / f'../seed/{seed_file}').absolute())
-    command = f'cat {names_csv_file_path} \\\n'
-    command += '  | ' + shell.copy_from_stdin_command(postgres_db,target_table='names',csv_format=True,skip_header=False,delimiter_char=',')
+    file_path = str((pathlib.Path(__file__).parent / f'../seed/{seed_file}').absolute())
+    command = f'cat {file_path} \\\n'
+    command += '  | ' + shell.copy_from_stdin_command(postgres_db,target_table='names',
+                            pipe_format=formats.CsvFormat(header=False, delimiter_char=','))
     print(command)
 
     (exitcode, pstdout) = subprocess.getstatusoutput(command)
@@ -122,9 +123,11 @@ def test_postgres_shell_copy_from_stdin_csv_skipheader(postgres_db, seed_file):
     assert exitcode == 0
 
     # reading csv file...
-    names_csv_file_path = str((pathlib.Path(__file__).parent / f'../seed/{seed_file}').absolute())
-    command = f'cat {names_csv_file_path} \\\n'
-    command += '  | ' + shell.copy_from_stdin_command(postgres_db,target_table='names_with_header',csv_format=True,skip_header=True,delimiter_char=',')
+    file_path = str((pathlib.Path(__file__).parent / f'../seed/{seed_file}').absolute())
+    command = f'cat {file_path} \\\n'
+    command += '  | ' + shell.copy_from_stdin_command(postgres_db,
+                            target_table='names_with_header',
+                            pipe_format=formats.CsvFormat(header=True, delimiter_char=','))
     print(command)
 
     (exitcode, pstdout) = subprocess.getstatusoutput(command)
@@ -142,6 +145,47 @@ def test_postgres_shell_copy_from_stdin_csv_skipheader(postgres_db, seed_file):
     (exitcode, pstdout) = subprocess.getstatusoutput(command)
     assert exitcode == 0
     assert pstdout == "Elinor Meklit"
+
+
+@pytest.mark.dependency(depends=["test_postgres_shell_query_command", "test_postgres_shell_copy_to_stout", "test_postgres_ddl"])
+@pytest.mark.parametrize(
+    "seed_file",
+    [
+        "accounts_crlf_lastrow.jsonl",
+        "accounts_crlf.jsonl",
+        "accounts_lf_lastrow.jsonl",
+        "accounts_lf.jsonl",
+    ]
+)
+def test_postgres_shell_copy_from_stdin_jsonl(postgres_db, seed_file):
+    # delete rows from table, make sure that the last matrix test does not mess up this test
+    command = execute_sql_statement_command(postgres_db, "DELETE FROM accounts_json")
+    (exitcode, pstdout) = subprocess.getstatusoutput(command)
+    assert exitcode == 0
+
+    # reading csv file...
+    file_path = str((pathlib.Path(__file__).parent / f'../seed/{seed_file}').absolute())
+    command = f'cat {file_path} \\\n'
+    command += '  | ' + shell.copy_from_stdin_command(postgres_db,
+                            target_table='accounts_json',
+                            pipe_format=formats.JsonlFormat())
+    print(command)
+
+    (exitcode, pstdout) = subprocess.getstatusoutput(command)
+    print(pstdout)
+    assert exitcode == 0
+
+    # check if writing was successful
+
+    command = execute_sql_statement_to_stdout_csv_command(postgres_db, "SELECT COUNT(*) FROM accounts_json")
+    (exitcode, pstdout) = subprocess.getstatusoutput(command)
+    assert exitcode == 0
+    assert pstdout == "6"
+
+    command = execute_sql_statement_to_stdout_csv_command(postgres_db, "SELECT COUNT(*) FROM accounts_json WHERE data IS NOT NULL")
+    (exitcode, pstdout) = subprocess.getstatusoutput(command)
+    assert exitcode == 0
+    assert pstdout == "6"
 
 
 def test_postgres_sqlalchemy(postgres_db):
