@@ -8,7 +8,8 @@ import mara_db.dbs
 
 def databricks_cursor_context(db: typing.Union[str, mara_db.dbs.DatabricksDB]) \
         -> 'databricks.sql.client.Cursor':
-    warn('Function databricks_cursor_context(db) is deprecated. Please use mara_db.dbs.cursor_context(db) instead.')
+    warn('Function databricks_cursor_context(db) is deprecated. Please use mara_db.dbs.cursor_context(db) instead.',
+         category=DeprecationWarning)
 
     if isinstance(db, str):
         db = mara_db.dbs.db(db)
