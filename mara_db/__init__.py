@@ -23,7 +23,8 @@ def MARA_ACL_RESOURCES():
 
 def MARA_CLICK_COMMANDS():
     from . import cli
-    return [cli.migrate]
+    return [cli.mara_db,
+            cli._migrate]
 
 
 def MARA_NAVIGATION_ENTRIES():
