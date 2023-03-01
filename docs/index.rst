@@ -59,6 +59,17 @@ This section focuses on the supported database engines.
    dbs/SQLite
 
 
+CLI commands
+------------
+
+When you are looking at available CLI commands, here you are at the right place.
+
+.. toctree::
+   :maxdepth: 2
+
+   cli
+
+
 API Reference
 -------------
 
