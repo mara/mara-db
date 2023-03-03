@@ -50,7 +50,7 @@ Configuration examples
             mara_db.config.databases = lambda: {
                 'dwh': mara_db.dbs.DatabricksDB(),
             }
-        
+
         You need to define the database connection in the `dbsqlclirc` settings file. See as well `Settings file <https://docs.databricks.com/dev-tools/databricks-sql-cli.html#settings-file>`_. Note that using a custom settings file is currently not supported in Mara.
 
 |

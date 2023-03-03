@@ -439,7 +439,7 @@ def __(db: dbs.SQLiteDB, header: bool = None, footer: bool = None, delimiter_cha
     if isinstance(pipe_format, formats.CsvFormat):
         if pipe_format.footer:
             raise ValueError('pipe_format.footer is not supported for SQLiteDB')
-        
+
         header_argument = '-noheader' if not pipe_format.header else ''
         delimiter_char = pipe_format.delimiter_char or '\t'
 
@@ -481,7 +481,7 @@ def __(db: dbs.SnowflakeDB, header: bool = None, footer: bool = None, delimiter_
         header = False
 
     else:
-        raise ValueError(f'Unsupported pipe_format for SnowflakeDB: {pipe_format}')       
+        raise ValueError(f'Unsupported pipe_format for SnowflakeDB: {pipe_format}')
 
     # possible other output_format, not implemented:
     #   json = json array
@@ -519,7 +519,7 @@ def __(db: dbs.DatabricksDB, header: bool = None, footer: bool = None, delimiter
         table_format = 'csv'
 
     else:
-        raise ValueError(f'Unsupported pipe_format for DatabricksDB: {pipe_format}')       
+        raise ValueError(f'Unsupported pipe_format for DatabricksDB: {pipe_format}')
 
     return (query_command(db, echo_queries=False)
             + f' --table-format {table_format}'

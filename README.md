@@ -6,7 +6,7 @@
 [![Slack Status](https://img.shields.io/badge/slack-join_chat-white.svg?logo=slack&style=social)](https://communityinviter.com/apps/mara-users/public-invite)
 
 Mini package for configuring and accessing multiple databases in a single project. Decouples the use of databases and their configuration by using "aliases" for databases.
- 
+
 The file [mara_db/dbs.py](https://github.com/mara/mara-db/blob/main/mara_db/dbs.py) contains abstract database configurations for PostgreSQL, Mysql, SQL Server, Oracle, SQLite and Big Query. The database connections of a project are configured by overwriting the `databases` function in [mara_db/config.py](https://github.com/mara/mara-db/blob/main/mara_db/config.py):
 
 ```python
@@ -29,22 +29,22 @@ print(mara_db.dbs.db('mara'))
 &nbsp;
 
 
-## Visualization of (PostgreSQL, MySQL, SQL Server) database schemas 
+## Visualization of (PostgreSQL, MySQL, SQL Server) database schemas
 
-[mara_db/views.py](https://github.com/mara/mara-db/blob/main/mara_db/views.py) contains a schema visualization for all configured databases using graphviz (currently PostgreSQL, Mysql and SQL Server only). It basically show tables of selected schemas together with the foreign key relations between them. 
+[mara_db/views.py](https://github.com/mara/mara-db/blob/main/mara_db/views.py) contains a schema visualization for all configured databases using graphviz (currently PostgreSQL, Mysql and SQL Server only). It basically show tables of selected schemas together with the foreign key relations between them.
 
 
 ![Schema visualization](https://github.com/mara/mara-db/blob/main/docs/_static/schema-visualization.png)
 
-For finding missing foreign key constraints, columns that follow a specific naming pattern (configurable via `config.schema_ui_foreign_key_column_regex`, default `*_fk`) and that are not part of foreign key constraints are drawn in pink.    
+For finding missing foreign key constraints, columns that follow a specific naming pattern (configurable via `config.schema_ui_foreign_key_column_regex`, default `*_fk`) and that are not part of foreign key constraints are drawn in pink.
 
 &nbsp;
 
 
 ## Fast batch processing: Accessing databases with shell commands
 
-The file [mara_db/shell.py](https://github.com/mara/mara-db/blob/main/mara_db/shell.py) contains functions that create commands for accessing databases via their command line clients. 
-   
+The file [mara_db/shell.py](https://github.com/mara/mara-db/blob/main/mara_db/shell.py) contains functions that create commands for accessing databases via their command line clients.
+
 For example, the `query_command` function creates a shell command that can receive an SQL query from stdin and execute it:
 
 ```python
@@ -64,7 +64,7 @@ print(mara_db.shell.copy_to_stdout_command('source-1'))
 # -> mysql --default-character-set=utf8mb4 --user=dwh --host=some-localhost my_app --skip-column-names
 ```
 
-Similarly, `copy_from_stdin_command` creates a client command that receives tabular data from stdin and and writes it to a target table: 
+Similarly, `copy_from_stdin_command` creates a client command that receives tabular data from stdin and and writes it to a target table:
 
 ```python
 print(mara_db.shell.copy_from_stdin_command('dwh', target_table='some_table', delimiter_char=';'))
@@ -87,7 +87,7 @@ print(mara_db.shell.copy_command('source-2', 'dwh', target_table='some_table'))
 
 The following **command line clients** are used to access the various databases:
 
-| Database | Client binary | Comments |  
+| Database | Client binary | Comments |
 | --- | --- | --- |
 | Postgresql / Redshift | `psql` | Included in standard distributions. |
 | MariaDB / Mysql | `mysql` | Included in standard distributions. |
@@ -115,7 +115,7 @@ class MyTable(sqlalchemy.ext.declarative.declarative_base()):
 
 db = mara_db.dbs.SQLiteDB(file_name='/tmp/test.sqlite')
 
-# create database and table 
+# create database and table
 mara_db.auto_migration.auto_migrate(engine=mara_db.auto_migration.engine(db), models=[MyTable])
 # ->
 # Created database "sqlite:////tmp/test.sqlite"
@@ -131,7 +131,7 @@ mara_db.auto_migration.auto_migrate(engine=mara_db.auto_migration.engine(db), mo
 
 When the model is changed later, then `auto_migrate` creates a diff against the existing database and applies it:
 
-```python    
+```python
 # remove index and add another column
 class MyTable(sqlalchemy.ext.declarative.declarative_base()):
     __tablename__ = 'my_table'
@@ -147,7 +147,7 @@ auto_migrate(engine=engine(db), models=[MyTable])
 ```
 
 **Use with care**! The are lot of changes [that alembic auto-generate can not detect](http://alembic.zzzcomputing.com/en/latest/autogenerate.html#what-does-autogenerate-detect-and-what-does-it-not-detect). We recommend testing each aut-migration on a staging system first before deploying to production. Sometimes manual migration scripts will be necessary.
- 
+
 
 
 ## Installation
@@ -176,7 +176,7 @@ On Linux, you most likely will have to deal with an SSL issue, see [this issue](
 For usage with BigQuery, the official `bq` and `gcloud` clients are required.
 See the [Google Cloud SDK](https://cloud.google.com/sdk/docs/quickstarts) page for installation details.
 
-Enabling the BigQuery API and Service account JSON credentials are also required as listed 
+Enabling the BigQuery API and Service account JSON credentials are also required as listed
 in the official documentation [here](https://cloud.google.com/bigquery/docs/quickstarts/quickstart-client-libraries#before-you-begin).
 
 One time authentication of the service-account used:
@@ -186,7 +186,7 @@ gcloud auth activate-service-account --key-file='path-to/service-account.json'
 
 Optionally, for loading data from files into BigQuery, the `gcloud_gcs_bucket_name` can be specified in the database initialization.
 This will use the Google Cloud Storage bucket specified as cache for loading data and over-coming potential limitations.
-For more see [loading-data](https://cloud.google.com/bigquery/docs/bq-command-line-tool#loading_data). 
+For more see [loading-data](https://cloud.google.com/bigquery/docs/bq-command-line-tool#loading_data).
 By default, files will directly loaded locally as described in [loading-local-data](https://cloud.google.com/bigquery/docs/loading-data-local#loading_data_from_a_local_data_source).
 
 A BigQuery context with a python cursor is also available on demand for easy access to BigQuery databases.

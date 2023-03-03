@@ -57,7 +57,7 @@
 - add all package files in wheel
 - a proper error is now thrown when the user tries to look at the schema of a BigQuery database
 
-## 4.7.0 - 4.7.1 (2020-10-23) 
+## 4.7.0 - 4.7.1 (2020-10-23)
 
 - Add BigQuery support
 - Fix copy from PostgreSQLDB to BigQueryDB when delimiter_char is not set (#36)
@@ -65,7 +65,7 @@
 - Add support for SQLServerDB port (#37)
 - Fix exit command sequence when previous command has exit code not zero (#40)
 
-## 4.6.0 - 4.6.1 (2020-07-03) 
+## 4.6.0 - 4.6.1 (2020-07-03)
 
 - Escape double quotes in copy_from_sdtin_command for PostgreSQL (#33)
 - Add overview page to visualization
@@ -84,7 +84,7 @@ If you use quotes in tables names in `Copy` commands, check whether they still w
 **required changes**
 
 If use SQL Server and have queries that contain the `$` sign, then please escape that one manually.
- 
+
 
 ## 4.4.1 - 4.4.3 (2020-02-13)
 
@@ -92,10 +92,10 @@ If use SQL Server and have queries that contain the `$` sign, then please escape
 - Set fetch-count 10000 for the `copy_to_stdout_command` for PostgreSQLDB to handle out of memory error.
 - Add schema visualization support for SQL Server
 - Set mssql severity level to 10 (#25)
- 
 
 
-## 4.4.0 (2019-11-28) 
+
+## 4.4.0 (2019-11-28)
 
 - Implement `copy-from-sdtin` command for Redshift (via tmp file on configuratble s3 bucket)
 - Refactor database schema visualization so that multiple databases can be implemented
@@ -104,10 +104,10 @@ If use SQL Server and have queries that contain the `$` sign, then please escape
 - Allow to pass a dbs.PostgreSQLDB instance to postgresql.postgres_cursor_context
 
 
-## 4.3.0 - 4.3.1 (2019-07-04) 
+## 4.3.0 - 4.3.1 (2019-07-04)
 
 - Add travis integration and PyPi upload
- 
+
 
 ## 4.2.0
 
@@ -117,11 +117,11 @@ If use SQL Server and have queries that contain the `$` sign, then please escape
 
 **required-changes**
 
-- Adapt own implementations of `copy_to_stdout_command`, `copy_from_stdin_command` & `copy_command` (add the two new parameters).   
+- Adapt own implementations of `copy_to_stdout_command`, `copy_from_stdin_command` & `copy_command` (add the two new parameters).
 - Test whether everything still works (has been working reliably in three big projects for 4 weeks now)
 
 
-## 4.1.0 
+## 4.1.0
 
 - Revert commit [422c332](https://github.com/mara/mara-db/commit/422c332b09b4e28e19289f0baa27f5102ade9a03) (Fix pg to pg copy command for json data). It was causing too much trouble.
 
@@ -185,8 +185,8 @@ If use SQL Server and have queries that contain the `$` sign, then please escape
 - add web ui for visualizing database schemas (postgres only currently)
 - improve acl
 - Fix bug in schema drawing
-- Quote strings when copying from sqlite 
-- NULL value handling when copying from sqlite 
+- Quote strings when copying from sqlite
+- NULL value handling when copying from sqlite
 
 
 
@@ -216,14 +216,14 @@ This version is pretty much incompatible with previous versions. See README.md f
 
 - Replace config function databases with database_urls
 - Add functions for client command creation
- 
+
 **required changes**
 
 - Change database configurations from
 
 ```python
 from sqlalchemy import engine
- 
+
 def databases() -> {str: engine.Engine}:
      """The list of database connections to use, by alias"""
     return {'mara': engine.create_engine('postgresql+psycopg2://root@localhost/mara')}
@@ -234,15 +234,13 @@ to
 
 ```python
 import sqlalchemy.engine.url
- 
+
 def database_urls() -> {str: sqlalchemy.engine.url}:
      """The list of database connections to use, by alias"""
     return {'mara': sqlalchemy.engine.url.make_url('postgresql+psycopg2://root@localhost/mara')}
 ```
 
-## 1.0.0 - 1.0.1 (2017-03-08) 
+## 1.0.0 - 1.0.1 (2017-03-08)
 
 - Initial version
 - Minor bug fixes and code style issues
-
-

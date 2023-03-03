@@ -5,7 +5,7 @@ Oracle
 Installation
 ------------
 
-You have to make sure that the `Oracle Instant Client <https://www.oracle.com/database/technologies/instant-client.html>`_ (`sqlplus64`) is installed. 
+You have to make sure that the `Oracle Instant Client <https://www.oracle.com/database/technologies/instant-client.html>`_ (`sqlplus64`) is installed.
 
 On Mac, follow `these instructions <https://vanwollingen.nl/install-oracle-instant-client-and-sqlplus-using-homebrew-a233ce224bf>`_. Then `sudo ln -s /usr/local/bin/sqlplus /usr/local/bin/sqlplus64` to make the binary accessible as `sqlplus64`.
 

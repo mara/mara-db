@@ -351,7 +351,7 @@ SELECT i.table_schema,
 FROM information_schema.table_constraints i
          LEFT JOIN information_schema.KEY_COLUMN_USAGE k
                    ON i.constraint_name = k.constraint_name
-WHERE i.constraint_type = 'FOREIGN KEY' 
+WHERE i.constraint_type = 'FOREIGN KEY'
       AND k.referenced_table_name IS NOT NULL
       AND i.table_schema IN {'%s'}; ''', (schema_names,))
         for table_schema, table_name, column_name, referenced_table_schema, referenced_table_name in cursor.fetchall():

@@ -4,7 +4,7 @@ Overview
 The following database engines are supported:
 
 | Database                  | Configuration class | SQLAlchemy Engine / dialect |
-| ------------------------- | ------------------- | --------------------------- | 
+| ------------------------- | ------------------- | --------------------------- |
 | [PostgreSQL]              | PostgreSQLDB        | postgresql+psycopg2
 | [Amazon Redshift]         | RedshiftDB          | postgresql+psycopg2
 | [Google Big Query]        | BigQueryDB          | bigquery

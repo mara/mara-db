@@ -3,7 +3,7 @@ Google Big Query
 
 Optionally, for loading data from files into BigQuery, the `gcloud_gcs_bucket_name` can be specified in the database initialization.
 This will use the Google Cloud Storage bucket specified as cache for loading data and over-coming potential limitations.
-For more see `loading-data <https://cloud.google.com/bigquery/docs/bq-command-line-tool#loading_data>`_. 
+For more see `loading-data <https://cloud.google.com/bigquery/docs/bq-command-line-tool#loading_data>`_.
 By default, files will directly loaded locally as described in `loading-local-data <https://cloud.google.com/bigquery/docs/loading-data-local#loading_data_from_a_local_data_source>`_.
 
 Installation
@@ -18,7 +18,7 @@ Use extras `bigquery` to install all required packages.
 The official `bq` and `gcloud` clients are required.
 See the `Google Cloud SDK <https://cloud.google.com/sdk/docs/quickstarts>`_ page for installation details.
 
-Enabling the BigQuery API and Service account JSON credentials are also required as listed 
+Enabling the BigQuery API and Service account JSON credentials are also required as listed
 in the official documentation `here <https://cloud.google.com/bigquery/docs/quickstarts/quickstart-client-libraries#before-you-begin>`_.
 
 One time authentication of the service-account used:
