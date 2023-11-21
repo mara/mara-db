@@ -3,7 +3,6 @@ CLI
 
 .. module:: mara_db.cli
 
-The following 
 This part of the documentation covers all the available cli commands of Mara DB.
 
 
