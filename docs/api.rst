@@ -3,7 +3,7 @@ API
 
 .. module:: mara_db
 
-This part of the documentation covers all the interfaces of Mara Page. For
+This part of the documentation covers all the interfaces of Mara DB. For
 parts where the package depends on external libraries, we document the most
 important right here and provide links to the canonical documentation.
 
