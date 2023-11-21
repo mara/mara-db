@@ -1,5 +1,9 @@
 # Changelog
 
+## 4.10.0 (2023-11-21)
+
+- add cli group 'mara-db'. Mark old cli commands as deprecated (#74)
+
 ## 4.9.2 (2023-02-21)
 
 ### Bugfixes :bug:
