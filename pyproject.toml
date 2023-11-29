@@ -1,3 +1,6 @@
 [build-system]
 requires = ["setuptools >= 40.6.0", "wheel"]
 build-backend = "setuptools.build_meta"
+
+[project.entry-points.'mara.commands']
+db = "mara_db.cli.mara_db
