@@ -1,5 +1,9 @@
 # Changelog
 
+## 4.11.0 (2023-12-06)
+
+- add entry point `mara.commands` (for [mara-cli](https://github.com/mara/mara-cli) support)
+
 ## 4.10.0 (2023-11-21)
 
 - add cli group 'mara-db'. Mark old cli commands as deprecated (#74)
