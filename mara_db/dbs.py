@@ -163,7 +163,7 @@ class SQLServerDB(DB):
             return f'mssql+pyodbc://{self.user}:{urllib.parse.quote(self.password)}@{self.host}:{port}/{self.database}?driver={driver}'
 
         if importlib.util.find_spec("pymssql"):
-            return f'mssql+pymssql://{self.db.user}:{urllib.parse.quote(self.db.password)}@{self.db.host}:{port}/{self.db.database}'
+            return f'mssql+pymssql://{self.user}:{urllib.parse.quote(self.password)}@{self.host}:{port}/{self.database}'
 
         raise ValueError('You need either python module pyodbc or pymssql to use sqlalchemy with SQLServerDB.')
 
