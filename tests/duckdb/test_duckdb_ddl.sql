@@ -10,8 +10,10 @@ CREATE TABLE names_with_header
     name TEXT
 );
 
+CREATE SEQUENCE row_seq START 1;
+
 CREATE TABLE accounts_json
 (
-    data jsonb,
-    row INTEGER PRIMARY KEY
+    data JSON,
+    row INTEGER PRIMARY KEY DEFAULT nextval('row_seq')
 );

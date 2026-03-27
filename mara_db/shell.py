@@ -862,18 +862,17 @@ def __(db: dbs.DuckDB, target_table: str, csv_format: bool = None, skip_header: 
     read_command = None
 
     if isinstance(pipe_format, formats.CsvFormat):
-        read_command = f"read_csv('/dev/stdin', delim = '{pipe_format.delimiter_char or ','}', header = {'true' if not pipe_format.header else 'false'})"
+        read_command = f"read_csv('/dev/stdin', delim = '{pipe_format.delimiter_char or ','}', header = {'true' if pipe_format.header else 'false'})"
     elif isinstance(pipe_format, formats.JsonlFormat):
-        read_command = "read_json_auto('/dev/stdin', format='newline_delimited')"
+        read_command = "read_json_objects_auto('/dev/stdin', format='newline_delimited')"
     elif isinstance(pipe_format, formats.NativeFormat):
         read_command = "read_csv_auto('/dev/stdin')"
     else:
         raise ValueError(f'Unsupported pipe_format for DuckDB: {pipe_format}')
 
-
     return (query_command(db)
-            + f''' -c "INSERT INTO {target_table} \\\n
-SELECT * FROM {read_command};"''')
+            + f' -c "INSERT INTO {target_table} {('( data )' if isinstance(pipe_format, formats.JsonlFormat) else '')}\\\n'
+            + f'SELECT *{(' AS data' if isinstance(pipe_format, formats.JsonlFormat) else '')} FROM {read_command};"')
 
 
 # -------------------------------
