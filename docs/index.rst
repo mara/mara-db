@@ -57,6 +57,7 @@ This section focuses on the supported database engines.
    dbs/Mysql
    dbs/Snowflake
    dbs/SQLite
+   dbs/DuckDB
 
 
 CLI commands

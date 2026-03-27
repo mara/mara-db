@@ -12,3 +12,4 @@ MSSQL_SQSH_DB = None # dbs.SqshSQLServerDB(host='DOCKER_IP', port=-1, user='sa',
 MSSQL_SQLCMD_DB = None # dbs.SqlcmdSQLServerDB(host='DOCKER_IP', port=-1, user='sa', password='YourStrong@Passw0rd', database='master', trust_server_certificate=True)
 SNOWFLAKE_DB = None #dbs.SnowflakeDB( account='ACCOUNT_IDENTIFER', user='USER', password='PASSWORD', database='SNOWFLAKE_SAMPLE_DATA')
 DATABRICKS_DB = None #dbs.DatabricksDB(host='DBSQLCLI_HOST_NAME', http_path='DBSQLCLI_HTTP_PATH', access_token='DBSQLCLI_ACCESS_TOKEN')
+DUCKDB_DB = dbs.DuckDB(file_name='/tmp/_mara_db_test.duckdb')

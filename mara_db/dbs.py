@@ -276,6 +276,21 @@ class DatabricksDB(DB):
         return f"databricks+connector://token:{self.access_token}@{self.host}:443/"
 
 
+class DuckDB(DB):
+    def __init__(self, file_name: pathlib.Path) -> None:
+        """
+        Connection information for a DuckDB database
+
+        Args:
+            file_name: The name of the database file
+        """
+        self.file_name = file_name
+
+    @property
+    def sqlalchemy_url(self):
+        return f'duckdb:///{self.file_name}'
+
+
 
 @functools.singledispatch
 def connect(db: object, **kargs) -> object:
@@ -345,6 +360,12 @@ def __(db, **kargs) -> object:
         http_path=db.http_path,
         token=db.access_token,
         driver_path=db.odbc_driver_path)
+
+
+@connect.register(DuckDB)
+def __(db, **kargs) -> object:
+    import duckdb
+    return duckdb.connect(database=db.file_name)
 
 
 

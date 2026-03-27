@@ -222,6 +222,16 @@ def __(db: dbs.DatabricksDB, timezone: str = None, echo_queries: bool = None):
             + ' -e /dev/stdin')
 
 
+@query_command.register(dbs.DuckDB)
+def __(db: dbs.DuckDB, timezone: str = None, echo_queries: bool = None):
+    assert timezone is None, "unimplemented parameter for DuckDB"
+    assert not echo_queries, "unimplemented parameter for DuckDB"
+    return ('duckdb'
+            + ' -bail'
+            + (f' {db.file_name}' if db.file_name else ''))
+
+
+
 # -------------------------------
 
 
@@ -526,6 +536,45 @@ def __(db: dbs.DatabricksDB, header: bool = None, footer: bool = None, delimiter
             + ('\n  | sed 1d' if remove_header else ''))
 
 
+@copy_to_stdout_command.register(dbs.DuckDB)
+def __(db: dbs.DuckDB, header: bool = None, footer: bool = None, delimiter_char: str = None, csv_format: bool = None,
+       pipe_format: formats.Format = None):
+    _check_format_with_args_used(pipe_format, header=header, footer=footer, delimiter_char=delimiter_char, csv_format=csv_format)
+    if not pipe_format:
+        pipe_format = _get_format_from_args(header=header, footer=footer, delimiter_char=delimiter_char, csv_format=csv_format)
+
+    extra_options = ''
+    copy_to_format_name = None
+
+    if isinstance(pipe_format, formats.ParquetFormat):
+        copy_to_format_name = 'parquet'
+    elif isinstance(pipe_format, formats.OrcFormat):
+        copy_to_format_name = 'orc'
+    elif isinstance(pipe_format, formats.CsvFormat):
+        if pipe_format.footer:
+            raise ValueError('pipe_format.footer is not supported for DuckDB')
+
+        if pipe_format.delimiter_char == '\t':
+            extra_options = ' -cmd ".mode tabs"'
+        else:
+            extra_options = (' -csv'
+                       + (f" -separator {pipe_format.delimiter_char}" if pipe_format.delimiter_char else ''))
+        
+        extra_options += ((' -noheader' if not pipe_format.header else '')
+                     + (f" -nullvalue \"{pipe_format.null_value_string}\"" if pipe_format.null_value_string else ''))
+    elif isinstance(pipe_format, formats.NativeFormat):
+        extra_options = ' -csv'
+    elif isinstance(pipe_format, formats.JsonlFormat):
+        extra_options = ' -jsonlines'
+    else:
+        raise ValueError(f'Unsupported pipe_format for DuckDB: {pipe_format}')
+
+    return ((f'''| (echo "COPY (" && cat && echo ") TO STDOUT (FORMAT {copy_to_format_name}) ") \\\n  | ''' if copy_to_format_name else '')
+             + (query_command(db, echo_queries=False)
+                + ' -readonly'
+                + extra_options))
+
+
 # -------------------------------
 
 
@@ -798,6 +847,36 @@ def __(db: dbs.SqlcmdSQLServerDB, target_table: str, csv_format: bool = None, sk
             # removes the temporary file
             + f'; rm -f "${{TEMP_STDIN}}" > /dev/null; '
             + '}')
+
+
+@copy_from_stdin_command.register(dbs.DuckDB)
+def __(db: dbs.DuckDB, target_table: str, csv_format: bool = None, skip_header: bool = None,
+       delimiter_char: str = None, quote_char: str = None, null_value_string: str = None, timezone: str = None,
+       pipe_format: formats.Format = None):
+    _check_format_with_args_used(pipe_format, header=skip_header, delimiter_char=delimiter_char, csv_format=csv_format,
+                                 quote_char=quote_char, null_value_string=null_value_string)
+    if not pipe_format:
+        pipe_format = _get_format_from_args(header=skip_header, delimiter_char=delimiter_char, csv_format=csv_format,
+                                            quote_char=quote_char, null_value_string=null_value_string)
+
+    read_command = None
+
+    if isinstance(pipe_format, formats.CsvFormat):
+        read_command = f"read_csv('/dev/stdin', delim = '{pipe_format.delimiter_char or ','}', header = {'true' if pipe_format.header else 'false'})"
+    elif isinstance(pipe_format, formats.JsonlFormat):
+        read_command = "read_json_objects_auto('/dev/stdin', format='newline_delimited')"
+    elif isinstance(pipe_format, formats.NativeFormat):
+        read_command = "read_csv_auto('/dev/stdin')"
+    else:
+        raise ValueError(f'Unsupported pipe_format for DuckDB: {pipe_format}')
+
+    return (query_command(db)
+            + f' -c "INSERT INTO {target_table}'
+            + (' ( data )' if isinstance(pipe_format, formats.JsonlFormat) else '')
+            + ' '
+            + 'SELECT *'
+            + (' AS data' if isinstance(pipe_format, formats.JsonlFormat) else '')
+            + f' FROM {read_command};"')
 
 
 # -------------------------------
