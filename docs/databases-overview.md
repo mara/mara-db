@@ -16,6 +16,7 @@ The following database engines are supported:
 | [Oracle Database]         | OracleDB            | -
 | [Snowflake]               | SnowflakeDB         | snowflake
 | [SQLite]                  | SQLiteDB            | sqlite
+| [DuckDB]                  | DuckDB              | duckdb
 
 
 [PostgreSQL]: https://www.postgresql.org/
@@ -27,6 +28,7 @@ The following database engines are supported:
 [Oracle Database]: https://www.oracle.com/database/
 [Snowflake]: https://www.snowflake.com/
 [SQLite]: https://www.sqlite.org/
+[DuckDB]: https://duckdb.org/
 [Microsoft SQL Server]: https://www.microsoft.com/en-us/sql-server
 [Azure Synapse Analytics]: https://azure.microsoft.com/en-us/services/synapse-analytics/
 
@@ -47,6 +49,7 @@ Shows which functions are supported with which database engine:
 | OracleDB            | Yes      | Yes          | -          | -          |
 | SnowflakeDB         | Yes      | Yes          | -          | -          |
 | SQLiteDB            | Yes      | Yes          | -          | Yes        |
+| DuckDB              | Yes      | Yes          | Yes        | Yes        |
 
 *Write STDOUT* gives the possibility to write a query to STDOUT
 
@@ -66,6 +69,7 @@ Shows the formats supported per database engine
 | RedshiftDB          | Yes | Yes   | -    | -       | -   |
 | BigQueryDB          | Yes | Yes   | Yes  | Yes     | Yes |
 | SQLServerDB         | Yes | -     | -    | -       | -   |
+| DuckDB              | Yes | Yes   | -    | -       | -   |
 
 
 ### Write STDOUT
@@ -81,6 +85,7 @@ Shows the formats supported per database engine
 | OracleDB            | Yes | -     | -    | -       | -   |
 | SnowflakeDB         | Yes | -     | -    | -       | -   |
 | SQLiteDB            | Yes | -     | -    | -       | -   |
+| DuckDB              | Yes | Yes   | -    | Yes     | Yes |
 
 
 Copy matrix
@@ -99,3 +104,4 @@ Shows which copy operations are implemented by default.
 | OracleDB     | Yes          | Yes        | Yes        | -            | -       | -           | -        | -           | -        |
 | SnowflakeDB  | -            | -          | -          | -            | -       | -           | -        | -           | -        |
 | SQLiteDB     | Yes          | Yes        | Yes        | -            | -       | -           | -        | -           | -        |
+| DuckDb       | -            | -          | -          | -            | -       | -           | -        | -           | -        |
