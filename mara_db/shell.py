@@ -874,7 +874,9 @@ def __(db: dbs.DuckDB, target_table: str, csv_format: bool = None, skip_header: 
             + f' -c "INSERT INTO {target_table}'
             + (' ( data )' if isinstance(pipe_format, formats.JsonlFormat) else '')
             + ' '
-            + f'SELECT *{(' AS data' if isinstance(pipe_format, formats.JsonlFormat) else '')} FROM {read_command};"')
+            + 'SELECT *'
+            + (' AS data' if isinstance(pipe_format, formats.JsonlFormat) else '')
+            + f' FROM {read_command};"')
 
 
 # -------------------------------
