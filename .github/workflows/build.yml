@@ -23,7 +23,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Install DuckDB CLI
         run: |
-          wget https://github.com/duckdb/duckdb/releases/download/v0.8.1/duckdb_cli-linux-amd64.zip
+          wget https://github.com/duckdb/duckdb/releases/download/v1.5.1/duckdb_cli-linux-amd64.zip
           unzip duckdb_cli-linux-amd64.zip
           chmod +x duckdb
           sudo mv duckdb /usr/local/bin/duckdb
