@@ -871,7 +871,9 @@ def __(db: dbs.DuckDB, target_table: str, csv_format: bool = None, skip_header: 
         raise ValueError(f'Unsupported pipe_format for DuckDB: {pipe_format}')
 
     return (query_command(db)
-            + f' -c "INSERT INTO {target_table} {('( data )' if isinstance(pipe_format, formats.JsonlFormat) else '')}\\\n'
+            + f' -c "INSERT INTO {target_table}'
+            + (' ( data )' if isinstance(pipe_format, formats.JsonlFormat) else '')
+            + ' '
             + f'SELECT *{(' AS data' if isinstance(pipe_format, formats.JsonlFormat) else '')} FROM {read_command};"')
 
 
