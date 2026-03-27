@@ -21,6 +21,10 @@ jobs:
         uses: actions/setup-python@v6.2.0
         with:
           python-version: ${{ matrix.python-version }}
+      - name: Install DuckDB CLI
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y duckdb
       - name: Install application
         env:
           pythonversion: ${{ matrix.python-version }}
