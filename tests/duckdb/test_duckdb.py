@@ -14,7 +14,6 @@ if not DUCKDB_DB:
     pytest.skip("skipping DuckDB tests: variable DUCKDB_DB not set", allow_module_level=True)
 
 
-@pytest.mark.dependency()
 def test_duckdb_shell_query_command(duckdb_db):
     command = execute_sql_statement_command(duckdb_db, "SELECT 1")
     (exitcode, pstdout) = subprocess.getstatusoutput(command)
@@ -22,7 +21,6 @@ def test_duckdb_shell_query_command(duckdb_db):
     assert exitcode == 0
 
 
-@pytest.mark.dependency()
 def test_duckdb_shell_copy_to_stout(duckdb_db):
     command = execute_sql_statement_to_stdout_csv_command(duckdb_db, "SELECT 1 AS Col1, 'FOO' AS Col2 UNION ALL SELECT 2, 'BAR'")
     (exitcode, pstdout) = subprocess.getstatusoutput(command)
@@ -32,7 +30,6 @@ def test_duckdb_shell_copy_to_stout(duckdb_db):
 2,BAR'''
 
 
-@pytest.mark.dependency()
 def test_duckdb_ddl(duckdb_db):
     """Creates DDL scripts required for other tests"""
     # run 'test_duckdb_ddl.sql'
