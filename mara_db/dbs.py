@@ -154,9 +154,18 @@ class SQLServerDB(DB):
     @property
     def sqlalchemy_url(self):
         import urllib.parse
+        import importlib
+
         port = self.port if self.port else 1433
-        driver = self.odbc_driver.replace(' ','+')
-        return f'mssql+pyodbc://{self.user}:{urllib.parse.quote(self.password)}@{self.host}:{port}/{self.database}?driver={driver}'
+
+        if importlib.util.find_spec("pyodbc"):
+            driver = self.odbc_driver.replace(' ','+')
+            return f'mssql+pyodbc://{self.user}:{urllib.parse.quote(self.password)}@{self.host}:{port}/{self.database}?driver={driver}'
+
+        if importlib.util.find_spec("pymssql"):
+            return f'mssql+pymssql://{self.user}:{urllib.parse.quote(self.password)}@{self.host}:{port}/{self.database}'
+
+        raise ValueError('You need either python module pyodbc or pymssql to use sqlalchemy with SQLServerDB.')
 
 
 class SqshSQLServerDB(SQLServerDB):
